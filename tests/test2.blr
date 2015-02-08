@@ -1,0 +1,13 @@
+list{bit[32]}[..] name1;
+bit[32]           name2;
+bit[32]           name3 if (name1 == 0);
+
+bit[32] func(bit[32] n1, list{bit[32]} l1) {
+   bit[32] rval;
+   
+   foreach (n in l1) {
+      rval = rval + n;
+   } 
+   
+   return rval;
+}
