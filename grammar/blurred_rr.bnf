@@ -15,28 +15,22 @@
 <declaration-list> ::= <declaration> <declaration-rest>
 <declaration-rest> ::= <declaration> <declaration-rest> | ''
 
+<declaration> ::= <data-declaration> | <fun-declaration>
 
-<declaration> ::= <data-declaration> |
-                  <fun-declaration>
 
 # Data declarations
 # ----------------------------------------------------------------------------------------
 
+<data-declaration-list> ::= <data-declaration> <data-declaration-rest>
+
+<data-declaration-rest> ::= <data-declaration> <data-declaration-rest> | ''
+
 #Vars
-<data-declaration> ::= <data-declaration-init-list> | 
-                       <data-declaration-noinit-list> 
+<data-declaration> ::= <type-specifier> name ; |
+                       struct name { <data-declaration-list> } ; |
+                       <data-declaration-cond>
 
-<data-declaration-noinit-list> ::= <data-declaration-noinit-list> <data-declaration-noinit> ; |
-                                   <data-declaration-noinit> ;
-
-<data-declaration-init-list> ::= <data-declaration-init-list> <data-declaration-init> ; |
-                                 <data-declaration-init> ;
-
-<data-declaration-noinit> ::= <type-specifier> name |
-                              <type-specifier> name if <expression> |
-                              struct name { <data-declaration-noinit-list> }
-
-<data-declaration-init> ::= <type-specifier> name = <expression> 
+<data-declaration-cond> ::= if ( <simple-expression> ) <data-declaration>
 
 <type-specifier> ::= <base-type> <array-declaration> |
                      <base-type>
@@ -86,8 +80,7 @@
                       foreach ( <mutable> in name )
 
 # Expressions
-<expression> ::= <mutable> = <expression> |
-                 <simple-espression>
+<expression> ::= <mutable> = <simple-expression>
 
 <simple-expression> ::= <simple-expression> <bin-operator-1> <simple-term> |
                         <simple-term>
@@ -96,9 +89,18 @@
                    <factor>
 
 <factor> := ( <simple-expression> ) |
-             <un-operator> |
+             <un-operator> <simple-expression> |
              <constant> |
              <call>
+
+# Weak operators
+<bin-operator-1> ::= + | -    
+                     
+
+#Strong operators
+<bin-operator-2> ::= * | /
+
+<un-operator> := + | - | ! | ~   
 
 <call> ::= name ( <args> )
 
@@ -106,7 +108,7 @@
 
 <arg-list> ::= <arg-list> , <arg> | <arg>
 
-<arg> ::= <expression>
+#<arg> ::= <simple-expression>
 
 <constant> ::= numeral | 
                literal |
