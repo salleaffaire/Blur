@@ -3,20 +3,54 @@
 
 #include <list>
 #include "blurred_lexer.hpp"
+#include "blurred_ast.hpp"
 
+// Production Rules
+// -----------------------------------------------
 enum BLR_RULE {
    blr_rule_program,
-   blr_rule_declaration_list,
-   blr_rule_declaration_rest,
-   blr_rule_declaration,
-   blr_rule_data_declaration,
-   blr_rule_fun_declaration
+   blr_rule_decdef_list,
+   blr_rule_decdef_rest,
+   blr_rule_decdef,
+   blr_rule_struct_declaration,
+   blr_rule_data_definition,
+   blr_rule_data_definition_cond,
+   blr_rule_type_specifier,
+   blr_rule_array_definition,
+   blr_rule_base_type,
+   blr_rule_fun_declaration,
+   blr_rule_params,
+   blr_rule_param_list,
+   blr_rule_statement,
+   blr_rule_expression_statement,
+   blr_rule_compound_statement,
+   blr_rule_statement_list,
+   blr_rule_if_statement,
+   blr_rule_return_statement,
+   blr_rule_break_statement,
+   blr_rule_while_statement,
+   blr_rule_for_statement,
+   blr_rule_expression,
+   blr_rule_simple_expression,
+   blr_rule_simple_term,
+   blr_rule_factor,
+   blr_rule_bin_operator_1,
+   blr_rule_bin_operator_2,
+   blr_rule_un_operator,
+   blr_rule_call,
+   blr_rule_args,
+   blr_rule_arg_list,
+   blr_rule_arg,
+   blr_rule_constant,
+   blr_rule_mutable
 };
 
 class blr_parser {
 public:
-   blr_parser() : mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
-   blr_parser(std::list<std::shared_ptr<blr_token>> *tl) : mpTokenList(tl) {}
+   blr_parser() : mVerbose(true),
+                  mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
+   blr_parser(std::list<std::shared_ptr<blr_token>> *tl) : mVerbose(true),
+                                                           mpTokenList(tl) {}
 
    ~blr_parser() {}
 
@@ -29,61 +63,72 @@ public:
       // 
       
    }
-   
-   // Run parser (Equivalent to the <program> rule)
-   bool run() {
+
+   bool program() {
       bool rval = true;
 
-      rval = declaration_list();
+      if (mVerbose) {
+         std::cout << "program" << std::endl;
+      }
+
+      rval = decdef_list();
 
       return rval;
    }
 
-   int choose_production(BLR_RULE rule) {
-      switch (rule) {
-      case blr_rule_declaration_rest:
-         break;
-      }
-   }
-
-   bool declaration_list() {
+   bool decdef_list() {
       bool rval = true;
       
-      rval = declaration();
-      rval = declaration_rest();
+      if (mVerbose) {
+         std::cout << "decdef_list" << std::endl;
+      }      
+      
+      rval = decdef();
+      rval = decdef_rest();
 
       return rval;
    }
 
-   bool declaration_rest() {
+   bool decdef_rest() {
       bool rval = true;
 
-      int pr = choose_production(blr_rule_declaration_rest);
-      
-      if (0 == pr) {
-         rval = declaration();
-         rval = declaration_rest();
+      if (mVerbose) {
+         std::cout << "decdef_rest" << std::endl;
       }
-      else {
-         // Do nothing
+
+      if (!IsEnd()) {
+         if (!match(blr_token_rightbrace)) {
+            rval = decdef();
+            rval = decdef_rest();
+         }
       }
       
       return rval;      
    }
 
-   bool declaration() {
+   bool decdef() {
       bool rval = true;
       
       return rval;
    }
    
    bool match(BLR_TOKEN_TYPE tt) {
+      bool rval = false;
       if ((**mLookAheadSymbol).mType == tt) {
          ++mLookAheadSymbol;
+         rval = true;
       }
+      return rval;
    }
 
 private:
+
+   bool mVerbose; 
+
+   bool IsEnd() {
+      return (mLookAheadSymbol == mpTokenList->end());
+   }
+
    // Pointer to the Lexer's token list
    std::list<std::shared_ptr<blr_token>>           *mpTokenList;
 
@@ -91,8 +136,13 @@ private:
    std::list<std::shared_ptr<blr_token>>::iterator mLookAheadSymbol;
 
    // FIRST
+   std::map<BLR_RULE, std::list<blr_token>> mFirst;
 
    // FOLLOW
+   std::map<BLR_RULE, std::list<blr_token>> mFollow;
+
+   // AST TREE
+   blr_ast_node mASTRoot;
 
 };
 

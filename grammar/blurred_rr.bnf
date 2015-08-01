@@ -1,42 +1,35 @@
 # Blurred Programming Language Grammar (BNF)
+# ----------------------------------------------------------------------------------------
 
 # Program structure
 > <program>
 / ''
 
 # Top level 
-<program> ::= <declaration-list>
-
-# Left-Recursion <declaration-list> production rule 
-# <declaration-list> ::= <declaration-list> <declaration> |
-#                        <declaration>
+<program> ::= <decdef-list>
 
 # Right-Recursion version
-<declaration-list> ::= <declaration> <declaration-rest>
-<declaration-rest> ::= <declaration> <declaration-rest> | ''
+<decdef-list> ::= <decdef> <decdef-rest>
+<decdef-rest> ::= <decdef> <decdef-rest> | ''
 
-<declaration> ::= <data-declaration> | <fun-declaration>
+<decdef> ::= <data-definition> | <fun-declaration> | <struct-declaration>
 
-
-# Data declarations
+# Struct
 # ----------------------------------------------------------------------------------------
+<struct-declaration> :=  struct name { <decdef-list> }
 
-<data-declaration-list> ::= <data-declaration> <data-declaration-rest>
+# Var
+# ----------------------------------------------------------------------------------------
+<data-definition> ::= <type-specifier> name ; |
+                      <data-definition-cond>
 
-<data-declaration-rest> ::= <data-declaration> <data-declaration-rest> | ''
+<data-definition-cond> ::= if ( <simple-expression> ) <data-definition>
 
-#Vars
-<data-declaration> ::= <type-specifier> name ; |
-                       struct name { <data-declaration-list> } ; |
-                       <data-declaration-cond>
-
-<data-declaration-cond> ::= if ( <simple-expression> ) <data-declaration>
-
-<type-specifier> ::= <base-type> <array-declaration> |
+<type-specifier> ::= <base-type> <array-definition> |
                      <base-type>
 
-<array-declaration> ::= <array-declaration> [ numeral ] |
-                        [ numeral ]
+<array-definition> ::= <array-definition> [ numeral ] |
+                       [ numeral ]
 
 <base-type> ::= bit |
                 list { <type-specifier> } |
@@ -60,7 +53,9 @@
                 <for-statement> |
                 <while-statement> |
                 <return-statement> |
-                <break-statement>
+                <break-statement> |
+                <data-definition> |
+                ''
 
 <expression-statement> ::= <expression> ; | ;
 
@@ -79,8 +74,11 @@
 <while-statement> ::= while ( <expression> ) statement |
                       foreach ( <mutable> in name )
 
+<for-statement> ::= for ( <mutable> = <simple-expression> ; <simple-expression> ; <simple-expression> ) <statement>
+
 # Expressions
-<expression> ::= <mutable> = <simple-expression>
+<expression> ::= <mutable> = <simple-expression> | 
+                 <simple-expression>
 
 <simple-expression> ::= <simple-expression> <bin-operator-1> <simple-term> |
                         <simple-term>
@@ -88,14 +86,14 @@
 <simple-term> ::=  <simple-term> <bin-operator-2> <factor> |
                    <factor>
 
-<factor> := ( <simple-expression> ) |
+<factor> :=  <call> |
              <un-operator> <simple-expression> |
              <constant> |
-             <call>
+             ( <simple-expression> )
 
 # Weak operators
-<bin-operator-1> ::= + | -    
-                     
+<bin-operator-1> ::= + | -
+
 
 #Strong operators
 <bin-operator-2> ::= * | /
@@ -108,10 +106,11 @@
 
 <arg-list> ::= <arg-list> , <arg> | <arg>
 
-#<arg> ::= <simple-expression>
+<arg> ::= <simple-expression>
 
 <constant> ::= numeral | 
                literal |
                true |
                false
 
+<mutable> ::= name
