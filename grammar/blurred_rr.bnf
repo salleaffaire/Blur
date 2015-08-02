@@ -16,7 +16,7 @@
 
 # Struct
 # ----------------------------------------------------------------------------------------
-<struct-declaration> :=  struct name { <decdef-list> }
+<struct-declaration> ::=  struct name { <decdef-list> }
 
 # Var
 # ----------------------------------------------------------------------------------------
@@ -39,9 +39,9 @@
 # Functions 
 <fun-declaration> ::= <type-specifier> name ( <params> ) { <statement> }
 
-<params> := <param-list> | ''
+<params> ::= <param-list> | ''
 
-<param-list> :: <param-list> , <param> | <param>
+<param-list> ::= <param-list> , <param> | <param>
 
 <param> ::= <type-specifier> name
 
@@ -86,7 +86,7 @@
 <simple-term> ::=  <simple-term> <bin-operator-2> <factor> |
                    <factor>
 
-<factor> :=  <call> |
+<factor> ::=  <call> |
              <un-operator> <simple-expression> |
              <constant> |
              ( <simple-expression> )
@@ -98,7 +98,7 @@
 #Strong operators
 <bin-operator-2> ::= * | /
 
-<un-operator> := + | - | ! | ~   
+<un-operator> ::= + | - | ! | ~
 
 <call> ::= name ( <args> )
 
