@@ -20,10 +20,8 @@
 
 # Var
 # ----------------------------------------------------------------------------------------
-<data-definition> ::= <type-specifier> name ; |
-                      <data-definition-cond>
-
-<data-definition-cond> ::= if ( <simple-expression> ) <data-definition>
+<data-definition> ::= var <type-specifier> name ; |
+                      if ( <simple-expression> ) <data-definition>
 
 <type-specifier> ::= <base-type> <array-definition> |
                      <base-type>
@@ -37,7 +35,7 @@
                 name
 
 # Functions 
-<fun-declaration> ::= <type-specifier> name ( <params> ) { <statement> }
+<fun-declaration> ::= func <type-specifier> name ( <params> ) { <statement> }
 
 <params> ::= <param-list> | ''
 

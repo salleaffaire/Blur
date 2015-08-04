@@ -85,7 +85,6 @@ public:
       
       rval = decdef();
       rval = decdef_rest();
-
       return rval;
    }
 
@@ -108,10 +107,33 @@ public:
 
    bool decdef() {
       bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "decdef" << std::endl;
+      }
+
+      // Found struct declaration
+      if (match(blr_token_struct)) {
+         struct_declaration();
+      }
+      else if (match(blr_token_struct)) {
+         
+      }
       
       return rval;
    }
    
+   bool struct_declaration() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "struct_declaration" << std::endl;
+      }
+      
+
+      return rval;
+   }
+
    bool match(BLR_TOKEN_TYPE tt) {
       bool rval = false;
       if ((**mLookAheadSymbol).mType == tt) {

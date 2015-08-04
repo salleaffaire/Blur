@@ -8,6 +8,9 @@ enum BLR_TOKEN_TYPE {
    blr_token_name, 
 
    // Reserved words
+   blr_token_func,
+   blr_token_var,
+
    blr_token_while,
    blr_token_if,
    blr_token_for,

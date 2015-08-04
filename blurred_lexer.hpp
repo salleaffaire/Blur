@@ -73,6 +73,9 @@ public:
       mTokenTypeNames[blr_token_name]          = "Name";
 
       // Reserved words
+      mTokenTypeNames[blr_token_func]          = "Function";  
+      mTokenTypeNames[blr_token_var]           = "Variable";        
+
       mTokenTypeNames[blr_token_while]         = "While";  
       mTokenTypeNames[blr_token_break]         = "Break";  
       mTokenTypeNames[blr_token_if]            = "If";  
@@ -128,6 +131,8 @@ public:
       mTokenTypeNames[blr_token_literal]       = "String Literal";  
 
       // Reserved words map
+      mReservedWords["func"]    = blr_token_func;
+      mReservedWords["var"]     = blr_token_var;
       mReservedWords["while"]   = blr_token_while;
       mReservedWords["break"]   = blr_token_break;
       mReservedWords["if"]      = blr_token_if;     

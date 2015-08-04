@@ -263,10 +263,23 @@ public:
              mTokenList.push_back(new bnf_token {bnft_or, " "});
          }
          else if (mPayload[mLexerPointer] == '>') {
-            rval = lex_root(mPayloadSize-mLexerPointer);
+            if ((mPayload[mLexerPointer-1] == '\n') || (mPayload[mLexerPointer-1] == '\f') || 
+                (mLexerPointer == 0)) {
+               rval = lex_root(mPayloadSize-mLexerPointer);
+            }
+            else {
+                rval = lex_term(mPayloadSize-mLexerPointer);
+            }
          }
          else if (mPayload[mLexerPointer] == '/') {
-            rval = lex_null(mPayloadSize-mLexerPointer);
+            // If first caracter on a line 
+            if ((mPayload[mLexerPointer-1] == '\n') || (mPayload[mLexerPointer-1] == '\f') || 
+                (mLexerPointer == 0)) {
+               rval = lex_null(mPayloadSize-mLexerPointer);
+            } 
+            else {
+               rval = lex_term(mPayloadSize-mLexerPointer);
+            }
          }
          else if (mPayload[mLexerPointer] == '<') {
             rval = lex_nterm(mPayloadSize-mLexerPointer);
@@ -290,12 +303,12 @@ public:
 
       // Is this a new non-terminal?
       if (find_production((*mTokenCurrent)->mValue) == mProductions.end()) {
-         std::cout << "New production symbol : " << (*mTokenCurrent)->mValue << std::endl;
+         //std::cout << "New production symbol : " << (*mTokenCurrent)->mValue << std::endl;
          mProductions[(*mTokenCurrent)->mValue] = 
             new bnf_production((*mTokenCurrent)->mValue);
       }
       else {
-         std::cout << "Adding to production symbol : " << (*mTokenCurrent)->mValue << std::endl;
+         //std::cout << "Adding to production symbol : " << (*mTokenCurrent)->mValue << std::endl;
       }
       
       // Current production pointer
@@ -329,7 +342,7 @@ public:
             else if ((*mTokenCurrent)->mType == bnft_term) {
                // Is this a new termial symbol
                if (find_terminal((*mTokenCurrent)->mValue) == mTerminals.end()) {
-                  std::cout << "New terminal symbol : " << (*mTokenCurrent)->mValue << std::endl;
+                  //std::cout << "New terminal symbol : " << (*mTokenCurrent)->mValue << std::endl;
                   mTerminals[(*mTokenCurrent)->mValue] = 
                      new bnf_terminal((*mTokenCurrent)->mValue);
                }
@@ -339,20 +352,18 @@ public:
             else if ((*mTokenCurrent)->mType == bnft_nterm) {
                // Is this a new termial symbol
                if (find_production((*mTokenCurrent)->mValue) == mProductions.end()) {
-                  std::cout << "New production symbol : " << (*mTokenCurrent)->mValue << std::endl;
+                  //std::cout << "New production symbol : " << (*mTokenCurrent)->mValue << std::endl;
                   mProductions[(*mTokenCurrent)->mValue] = 
                      new bnf_production((*mTokenCurrent)->mValue);
                }
-               temp.push_back(mTerminals[(*mTokenCurrent)->mValue]);
+               temp.push_back(mProductions[(*mTokenCurrent)->mValue]);
             }
             ++mTokenCurrent;++mTokenNext;
          }
          
          // Push the last production 
          prod_pointer->mExpensionList.push_back(temp);
-         
       }
-
       return rval;
    }
    
@@ -391,6 +402,14 @@ public:
       return rval;
    }
 
+   // Calculate LR Parsing Tables
+   bool calculate_firsts_table() {
+      bool rval = true;
+
+      
+
+      return rval;
+   }
 
    // Debug output functions
    void output_token_list() {
@@ -407,28 +426,43 @@ public:
    void output_productions() {
       for (auto &p: mProductions) {
          std::cout << "Production : <" << p.second->mName << ">" << std::endl;
-         std::cout << p.second->IsTerminal() << std::endl;
+         //std::cout << p.second->IsTerminal() << std::endl;
 
          bnf_production *prod = dynamic_cast<bnf_production *>(p.second);
          //std::cout << prod->mExpensionList.size() << std::endl;
          // For all expension lists
+         int prod_number = 0;
          for (auto &el: prod->mExpensionList) {
-            std::cout << " " << el.size() << std::endl;
             // For all item in list
+            std::cout << prod_number << " ::= ";
             for (auto &li: el) {
-               std::cout << " " << li << std::endl;
+               if (li->IsTerminal()) {
+                  std::cout << li->mName << " ";
+               }
+               else {
+                  std::cout << "<" << li->mName << "> ";
+               }
             } 
+            std::cout << std::endl;
+            ++prod_number;
          }
       }
    }
    
-   
+   std::string get_file_name() {
+      return mFileName;
+   }
+
+private:   
    // Parser variables
    std::map<std::string, bnf_symbol *>  mTerminals;
    std::map<std::string, bnf_symbol *>  mProductions;
 
    std::string mRoot;
    std::string mNull;
+
+   // LR Parsing Tables
+   std::map<std::string, std::list<bnf_terminal *>> mFirsts; 
 
    std::string mFileName;
    bool        mState;
