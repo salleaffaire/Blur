@@ -38,6 +38,7 @@ enum BLR_TOKEN_TYPE {
    blr_token_leftbracket,
    blr_token_rightbracket,
    blr_token_semicolon,
+   blr_token_comma,
    blr_token_dot,
    blr_token_dotdot,
    blr_token_equal,

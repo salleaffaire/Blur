@@ -103,6 +103,7 @@ public:
       mTokenTypeNames[blr_token_leftbracket]   = "Left Bracket";  
       mTokenTypeNames[blr_token_rightbracket]  = "Right Bracket";  
       mTokenTypeNames[blr_token_semicolon]     = "Semicolon";  
+      mTokenTypeNames[blr_token_comma]         = "Comma";  
       mTokenTypeNames[blr_token_dot]           = "Dot";  
       mTokenTypeNames[blr_token_dotdot]        = "Dot Dot";  
       mTokenTypeNames[blr_token_equal]         = "Equal";  
@@ -287,6 +288,11 @@ public:
          ++(*pc);
          break;
 
+      case ',':
+         token->mType = blr_token_comma;
+         ++(*pc);
+         break;
+
       case '.':
          token->mType = blr_token_dot;
          ++(*pc);
@@ -468,7 +474,8 @@ public:
                      (*pc == '}') || (*pc == '[') || (*pc == ']') ||
                      (*pc == ';') || (*pc == '.') || (*pc == '<') ||
                      (*pc == '>') || (*pc == '=') || (*pc == '!') ||
-                     (*pc == '^') || (*pc == '&') || (*pc == '|')) {
+                     (*pc == '^') || (*pc == '&') || (*pc == '|') ||
+                     (*pc == ',')) {
                if (blr_readoperator(&pc, current_token)) {
                   mTokenList.push_back(std::shared_ptr<blr_token>(current_token));
                   need_new_token = true;
@@ -523,6 +530,9 @@ public:
    std::list<std::shared_ptr<blr_token>> *get_token_list_pointer() {
       return &mTokenList;
    }
+   std::map<BLR_TOKEN_TYPE, std::string> *get_token_type_names() {
+      return &mTokenTypeNames;
+   }
    
 private:
    char        *mPayload;
@@ -536,7 +546,7 @@ private:
    std::map<BLR_LEXER_ERROR, std::string> mErrorMessages;
 
    // This is mostly used for debugging
-   std::map<BLR_TOKEN_TYPE, std::string> mTokenTypeNames;
+   std::map<BLR_TOKEN_TYPE, std::string>  mTokenTypeNames;
 
    bool err() {
       std::cout << std::endl;

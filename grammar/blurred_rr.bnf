@@ -39,8 +39,8 @@
 
 <params> ::= <param-list> | ''
 
+# These 2 are implemented together in the parser
 <param-list> ::= <param-list> , <param> | <param>
-
 <param> ::= <type-specifier> name
 
 # Statements

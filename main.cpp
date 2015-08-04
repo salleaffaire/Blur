@@ -6,28 +6,41 @@
 
 int main(int argc, char *argv[]) {
 
-   #if 1
+   #if 0
 
    bnf_parser bnfp("grammar/blurred_rr.bnf");
    bnfp.lex();
-   bnfp.output_token_list();
+   //std::cout << "Token List :" << std::endl;
+   //bnfp.output_token_list();
+
+   std::cout << "BNF Grammar : " << bnfp.get_file_name() << std::endl;
    bnfp.output_root();
+
+   std::cout << " " << std::endl;
    bnfp.output_null();
 
+   std::cout << " " << std::endl;
    bnfp.parse();
+
+   std::cout << "Production Rules List : " << std::endl;
    bnfp.output_productions();
    
    #endif
 
-   #if 0
+   #if 1
    // Test Blurred Lexer
-   blr_lexer lexer("tests/test3.blr");
+   blr_lexer lexer("tests/test0.blr");
 
    lexer.run();
    lexer.output_token_list();
 
    // Setup the parser
-   blr_parser parser(lexer.get_token_list_pointer());
+   blr_parser parser;
+   parser.init(lexer.get_token_list_pointer(),
+               lexer.get_token_type_names());
+
+   // Call the top level production
+   parser.program();
    #endif
 
 
