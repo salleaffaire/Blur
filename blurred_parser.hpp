@@ -261,7 +261,11 @@ public:
       }      
       while (rval && isnext(blr_token_leftbracket)) {
          if (rval) { rval = match(blr_token_leftbracket); }
-         if (rval) { rval = match(blr_token_numeral); }
+         if (rval) { 
+            if (match(blr_token_numeral)) {}
+            else if (match(blr_token_dotdot)) {}
+            else { rval = false; }
+         }
          if (rval) { rval = match(blr_token_rightbracket); }
       }
       
