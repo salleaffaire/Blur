@@ -14,6 +14,9 @@ int main(int argc, char *argv[]) {
    bnfp.output_root();
    bnfp.output_null();
 
+   bnfp.parse();
+   bnfp.output_productions();
+   
    #endif
 
    #if 0
