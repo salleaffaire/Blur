@@ -26,12 +26,17 @@ enum BLR_TOKEN_TYPE {
    blr_token_sizeof,
    blr_token_in,
    blr_token_using,
+   blr_token_return,
+
+   blr_token_true,
+   blr_token_false,
 
    // Operators
    blr_token_slash,
    blr_token_plus,
    blr_token_minus,
    blr_token_star,
+   blr_token_modulo,
    blr_token_leftpar,
    blr_token_rightpar,
    blr_token_leftbrace,

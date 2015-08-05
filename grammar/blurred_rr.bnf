@@ -40,7 +40,7 @@
                 name
 
 # Functions 
-<fun-declaration> ::= func <type-specifier> name ( <params> ) { <statement> }
+<fun-declaration> ::= func <type-specifier> name ( <params> ) <statement>
 
 <params> ::= <param-list> | ''
 
@@ -55,6 +55,7 @@
                 <return-statement> |
                 <for-statement> |
                 <while-statement> |
+                <foreach-statement> |
                 <return-statement> |
                 <break-statement> |
                 <data-definition> |
@@ -74,32 +75,43 @@
 
 <break-statement> ::= break ;
 
-<while-statement> ::= while ( <expression> ) statement |
-                      foreach ( <mutable> in name )
+<while-statement> ::= while ( <expression> ) statement
 
-<for-statement> ::= for ( <mutable> = <simple-expression> ; <simple-expression> ; <simple-expression> ) <statement>
+<foreach-statement> ::=
+                      foreach ( <mutable> in name ) statement
+
+<for-statement> ::= for ( <expression> ; <expression> ; <expression> ) <statement>
 
 # Expressions
-<expression> ::= <mutable> = <simple-expression> | 
+<expression> ::= <mutable> = <expression> | 
                  <simple-expression>
 
-<simple-expression> ::= <simple-expression> <bin-operator-1> <simple-term> |
-                        <simple-term>
-
-<simple-term> ::=  <simple-term> <bin-operator-2> <factor> |
-                   <factor>
-
+# <simple-expression> is my r-value
+# I think I finally got an LL(1) expression grammar
+<simple-expression> ::= <simple-term> <simple-expression-tail>
+<simple-expression-tail> ::= <bin-operator-1> <simple-term> |
+                             <bin-operator-1> <simple-term> <simple-expression-tail> | 
+                             ''
+<simple-term> ::= <simple-factor> <simple-term-tail>
+<simple-term-tail> ::= <bin-operator-2> <simple-factor> |
+                       <bin-operator-2> <simple-factor> <simple-term-tail> | 
+                       ''
+<simple-factor> ::= <simple-factor> <simple-term-tail>
+<simple-term-tail> ::= <bin-operator-2> <simple-factor> |
+                       <bin-operator-2> <simple-factor> <simple-term-tail> | 
+                       ''
 <factor> ::=  <call> |
-             <un-operator> <simple-expression> |
-             <constant> |
-             ( <simple-expression> )
+              <constant> |
+              <mutable> |
+              <un-opertor> <simple-term> |
+              ( <simple-expression> )
+              
 
 # Weak operators
-<bin-operator-1> ::= + | -
-
+<bin-operator-1> ::= + | - | & | ^ | < | > | <= | >= | == | >> | << | && 
 
 #Strong operators
-<bin-operator-2> ::= * | /
+<bin-operator-2> ::= * | / | %
 
 <un-operator> ::= + | - | ! | ~
 

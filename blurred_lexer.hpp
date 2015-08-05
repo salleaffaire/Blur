@@ -87,6 +87,10 @@ public:
       mTokenTypeNames[blr_token_in]            = "In"; 
       mTokenTypeNames[blr_token_sizeof]        = "Sizeof"; 
       mTokenTypeNames[blr_token_using]         = "Using";
+      mTokenTypeNames[blr_token_return]        = "Return";
+
+      mTokenTypeNames[blr_token_true]          = "True";
+      mTokenTypeNames[blr_token_false]         = "False";
 
       mTokenTypeNames[blr_token_list]          = "List";  
       mTokenTypeNames[blr_token_bit]           = "Bit";
@@ -96,7 +100,8 @@ public:
       mTokenTypeNames[blr_token_slash]         = "Slash";  
       mTokenTypeNames[blr_token_plus]          = "Plus";  
       mTokenTypeNames[blr_token_minus]         = "Minus"; 
-      mTokenTypeNames[blr_token_star]          = "Star";  
+      mTokenTypeNames[blr_token_star]          = "Star";
+      mTokenTypeNames[blr_token_modulo]        = "Modulo";
       mTokenTypeNames[blr_token_leftpar]       = "Left Parenthese";  
       mTokenTypeNames[blr_token_rightpar]      = "Right Parenthese";  
       mTokenTypeNames[blr_token_leftbrace]     = "Left Brace";  
@@ -148,6 +153,9 @@ public:
       mReservedWords["bit"]     = blr_token_bit;
       mReservedWords["list"]    = blr_token_list;
       mReservedWords["void"]    = blr_token_void;
+      mReservedWords["return"]  = blr_token_return;
+      mReservedWords["true"]    = blr_token_true;
+      mReservedWords["false"]   = blr_token_false;
 
       // Error message map
       mErrorMessages[blr_l_error_syntax] = "Syntax";
@@ -306,6 +314,11 @@ public:
 
       case '~':
          token->mType = blr_token_bwnot;
+         ++(*pc);
+         break;
+
+      case '%':
+         token->mType = blr_token_modulo;
          ++(*pc);
          break;
 
@@ -477,7 +490,7 @@ public:
                      (*pc == ';') || (*pc == '.') || (*pc == '<') ||
                      (*pc == '>') || (*pc == '=') || (*pc == '!') ||
                      (*pc == '^') || (*pc == '&') || (*pc == '|') ||
-                     (*pc == ',')) {
+                     (*pc == ',') || (*pc == '%')) {
                if (blr_readoperator(&pc, current_token)) {
                   mTokenList.push_back(std::shared_ptr<blr_token>(current_token));
                   need_new_token = true;

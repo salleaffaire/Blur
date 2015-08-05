@@ -208,9 +208,9 @@ public:
       if (rval) { rval = match(blr_token_leftpar); }
       if (rval) { rval = params(); }
       if (rval) { rval = match(blr_token_rightpar); }
-      if (rval) { rval = match(blr_token_leftbrace); }
+      //if (rval) { rval = match(blr_token_leftbrace); }
       if (rval) { rval = statement(); }
-      if (rval) { rval = match(blr_token_rightbrace); }
+      //if (rval) { rval = match(blr_token_rightbrace); }
       
       if (!rval) {
          error();
@@ -297,7 +297,7 @@ public:
       
       if (!rval) {
          error();
-      }         
+      }
 
       return rval;
    }
@@ -306,8 +306,18 @@ public:
       bool rval = true;
       if (mVerbose) {
          std::cout << "<expression>" << std::endl;
-      } 
-
+      }
+      
+      if (isnext(blr_token_name) && issecondnext(blr_token_assignment)) {
+         if (rval) { rval = match(blr_token_name); }
+         if (rval) { rval = match(blr_token_assignment); }
+         if (rval) { rval = expression(); }
+      }
+      else {
+         // Here we take a guess but it really can't be anything else
+         if (rval) { rval = simple_expression(); }
+      }
+   
       if (!rval) {
          error();
       }
@@ -320,9 +330,68 @@ public:
       if (mVerbose) {
          std::cout << "<simple_expression>" << std::endl;
       } 
+      
+      if (rval) { rval = simple_term(); }
+      
+      while (matchbin1()) {
+         if (rval) { rval = simple_term(); } 
+      }
+
+      if (!rval) {
+         error();
+      }
 
       return rval;
    }
+
+   bool simple_term() {
+      bool rval = true;
+      if (mVerbose) {
+         std::cout << "<simple_term>" << std::endl;
+      } 
+      
+      if (rval) { rval = simple_factor(); }
+      
+      while (matchbin2()) {
+         if (rval) { rval = simple_factor(); } 
+      }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+   
+   bool simple_factor() {
+      bool rval = true;
+      if (mVerbose) {
+         std::cout << "<simple_factor>" << std::endl;
+      } 
+      
+      if (matchun()) {
+         if (rval) { rval = simple_term(); }
+      }
+      else if (isnext(blr_token_name) && issecondnext(blr_token_leftpar)) {
+         
+      }
+      else if (match(blr_token_name))    {}
+      else if (match(blr_token_true))    {}
+      else if (match(blr_token_false))   {}
+      else if (match(blr_token_numeral)) {}
+      else if (match(blr_token_literal)) {}
+      else if (match(blr_token_leftpar)) {
+         if (rval) { rval = simple_expression(); }
+         if (rval) { match(blr_token_rightpar); }
+      }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+  
 
    bool statement() {
       bool rval = true;
@@ -341,9 +410,43 @@ public:
          else if (isnext(blr_token_break)) {
             if (rval) { rval = break_statement(); }
          }
+         else if (isnext(blr_token_return)) {
+            if (rval) { rval = return_statement(); }
+         }
          else if (isnext(blr_token_leftbrace)) {
             if (rval) { rval = compound_statement(); }
          }
+         else if (isnext(blr_token_while)) {
+            if (rval) { rval = while_statement(); }
+         }
+         else if (isnext(blr_token_foreach)) {
+            if (rval) { rval = foreach_statement(); }
+         }
+         else if (isnext(blr_token_for)) {
+            if (rval) { rval = for_statement(); }
+         }
+         else {
+            // Try an expression statement
+            if (rval) { rval = expression_statement(); }
+         }
+      }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool expression_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<expression_statement>" << std::endl;
+      }
+
+      while (!match(blr_token_semicolon)) {
+         if (rval) { rval = expression(); }
       }
 
       if (!rval) {
@@ -376,6 +479,69 @@ public:
       return rval;
    }
 
+   bool for_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<if_statement>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_for); }
+      if (rval) { rval = match(blr_token_leftpar); }
+      if (rval) { rval = expression(); }
+      if (rval) { rval = match(blr_token_semicolon); }
+      if (rval) { rval = expression(); }
+      if (rval) { rval = match(blr_token_semicolon); }
+      if (rval) { rval = expression(); }
+      if (rval) { rval = match(blr_token_rightpar); }
+      if (rval) { rval = statement(); }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool while_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<while_statement>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_while); }
+      if (rval) { rval = match(blr_token_leftpar); }
+      if (rval) { rval = expression(); }
+      if (rval) { rval = match(blr_token_rightpar); }
+      if (rval) { rval = statement(); }
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool foreach_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<foreach_statement>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_foreach); }
+      if (rval) { rval = match(blr_token_leftpar); }
+      if (rval) { rval = match(blr_token_name); }
+      if (rval) { rval = match(blr_token_in); }
+      if (rval) { rval = match(blr_token_name); }
+      if (rval) { rval = statement(); }
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
    bool break_statement() {
       bool rval = true;
 
@@ -384,6 +550,26 @@ public:
       }
 
       if (rval) { rval = match(blr_token_break); }
+      if (rval) { rval = match(blr_token_semicolon); }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool return_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<return_statement>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_return); }
+      if (!isnext(blr_token_semicolon)) {
+         rval = expression();
+      }
       if (rval) { rval = match(blr_token_semicolon); }
 
       if (!rval) {
@@ -424,7 +610,7 @@ public:
       return ((*mLookAheadSymbol)->mType == tt);
    }
 
-   bool is_second_next(BLR_TOKEN_TYPE tt) {
+   bool issecondnext(BLR_TOKEN_TYPE tt) {
       //std::cout << "IS In   : " << (*mpTokenTypeNames)[tt] << std::endl;
       //std::cout << "IS Next : " << (*mpTokenTypeNames)[(*mLookAheadSymbol)->mType] 
       //          << std::endl;
@@ -442,6 +628,60 @@ public:
       }
       return rval;
    }
+
+   bool matchbin1() {
+      bool rval = false;
+      BLR_TOKEN_TYPE tt = (**mLookAheadSymbol).mType;
+      if ((tt == blr_token_plus)         ||
+          (tt == blr_token_minus)        ||
+          (tt == blr_token_lesser)       ||
+          (tt == blr_token_greater)      ||
+          (tt == blr_token_lesserequal)  ||
+          (tt == blr_token_greaterequal) ||
+          (tt == blr_token_equal)        ||
+          (tt == blr_token_notequal)     ||
+          (tt == blr_token_or)           ||
+          (tt == blr_token_and)          ||
+          (tt == blr_token_xor)          ||
+          (tt == blr_token_bwor)         ||
+          (tt == blr_token_bwand)        ||
+          (tt == blr_token_leftshift)    ||
+          (tt == blr_token_rightshift)) {
+         std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] << std::endl;
+         
+         ++mLookAheadSymbol;
+         rval = true;         
+      }
+      return rval;
+   }
+
+   bool matchbin2() {
+      bool rval = false;
+      BLR_TOKEN_TYPE tt = (**mLookAheadSymbol).mType;
+      if ((tt == blr_token_slash) ||
+          (tt == blr_token_star)  ||
+          (tt == blr_token_modulo)) {
+         std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] << std::endl;
+         ++mLookAheadSymbol;
+         rval = true;         
+      }
+      return rval;
+   }
+
+   bool matchun() {
+      bool rval = false;
+      BLR_TOKEN_TYPE tt = (**mLookAheadSymbol).mType;
+      if ((tt == blr_token_plus)  ||
+          (tt == blr_token_minus) ||
+          (tt == blr_token_not)   ||
+          (tt == blr_token_bwnot)) {
+         std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] << std::endl;
+         ++mLookAheadSymbol;
+         rval = true;         
+      }
+      return rval;
+   }
+
 
    bool error() {
       std::cout << "Error - " << std::endl; 
