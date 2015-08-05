@@ -20,8 +20,11 @@
 
 # Var
 # ----------------------------------------------------------------------------------------
-<data-definition> ::= var <type-specifier> name ; |
-                      if ( <simple-expression> ) <data-definition>
+<data-definition> ::= <data-definition-front> ; |
+                      <data-definition-front> <data-definition-tail> ; 
+
+<data-definition-front> ::= var <type-specifier> name
+<data-definition-tail>  ::= if ( <simple-expression> )
 
 <type-specifier> ::= <base-type> <array-definition> |
                      <base-type>

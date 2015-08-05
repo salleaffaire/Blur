@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 
    #if 1
    // Test Blurred Lexer
-   blr_lexer lexer("tests/test1.blr");
+   blr_lexer lexer("tests/test2.blr");
 
    lexer.run();
    lexer.output_token_list();

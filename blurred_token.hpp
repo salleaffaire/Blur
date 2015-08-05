@@ -13,6 +13,7 @@ enum BLR_TOKEN_TYPE {
 
    blr_token_while,
    blr_token_if,
+   blr_token_else,
    blr_token_for,
    blr_token_foreach,
    blr_token_break,

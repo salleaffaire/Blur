@@ -79,6 +79,7 @@ public:
       mTokenTypeNames[blr_token_while]         = "While";  
       mTokenTypeNames[blr_token_break]         = "Break";  
       mTokenTypeNames[blr_token_if]            = "If";  
+      mTokenTypeNames[blr_token_else]          = "Else";  
       mTokenTypeNames[blr_token_for]           = "For";  
       mTokenTypeNames[blr_token_foreach]       = "For Each";  
 
@@ -137,6 +138,7 @@ public:
       mReservedWords["while"]   = blr_token_while;
       mReservedWords["break"]   = blr_token_break;
       mReservedWords["if"]      = blr_token_if;     
+      mReservedWords["else"]    = blr_token_else;     
       mReservedWords["for"]     = blr_token_for;     
       mReservedWords["foreach"] = blr_token_foreach;     
       mReservedWords["struct"]  = blr_token_struct;

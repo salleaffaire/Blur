@@ -154,18 +154,21 @@ public:
       if (match(blr_token_var)) {
          if (rval) { rval = type_specifier(); }
          if (rval) { rval = match(blr_token_name); }
+
+         // Conditional Variable <data-definition-tail>
+         if (match(blr_token_if)) {
+            if (rval) { rval = match(blr_token_leftpar); }
+            if (rval) { rval = simple_expression(); }
+            if (rval) { rval = match(blr_token_rightpar); }
+         }
+
          if (rval) { rval = match(blr_token_semicolon); }
-      }
-      else if (match(blr_token_if)) {
-         if (rval) { rval = match(blr_token_leftpar); }
-         if (rval) { rval = simple_expression(); }
-         if (rval) { rval = match(blr_token_rightpar); }
       }
       else {
          rval = false;
          error();
       }
-      
+
       if (!rval) {
          error();
       }
@@ -299,6 +302,19 @@ public:
       return rval;
    }
 
+  bool expression() {
+      bool rval = true;
+      if (mVerbose) {
+         std::cout << "<expression>" << std::endl;
+      } 
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
    bool simple_expression() {
       bool rval = true;
       if (mVerbose) {
@@ -315,6 +331,85 @@ public:
          std::cout << "<statement>" << std::endl;
       }
 
+      if (rval) {
+         if (isnext(blr_token_var)) {
+            if (rval) { rval = data_definition(); }
+         }
+         else if (isnext(blr_token_if)) {
+            if (rval) { rval = if_statement(); }
+         }
+         else if (isnext(blr_token_break)) {
+            if (rval) { rval = break_statement(); }
+         }
+         else if (isnext(blr_token_leftbrace)) {
+            if (rval) { rval = compound_statement(); }
+         }
+      }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool if_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<if_statement>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_if); }
+      if (rval) { rval = match(blr_token_leftpar); }
+      if (rval) { rval = expression(); }
+      if (rval) { rval = match(blr_token_rightpar); }
+      if (rval) { rval = statement(); }
+      if (match(blr_token_else)) {
+         if (rval) { rval = statement(); }
+      }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool break_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<break_statement>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_break); }
+      if (rval) { rval = match(blr_token_semicolon); }
+
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool compound_statement() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<compound_statement>" << std::endl;
+      }
+
+      // Open Brace {
+      if (rval) { rval = match(blr_token_leftbrace); } 
+      
+      while (rval && !isnext(blr_token_rightbrace)) {
+         rval = statement();
+      }
+      
+      // Close Brace }
+      if (rval) { rval = match(blr_token_rightbrace); } 
+
       if (!rval) {
          error();
       }
@@ -329,12 +424,19 @@ public:
       return ((*mLookAheadSymbol)->mType == tt);
    }
 
+   bool is_second_next(BLR_TOKEN_TYPE tt) {
+      //std::cout << "IS In   : " << (*mpTokenTypeNames)[tt] << std::endl;
+      //std::cout << "IS Next : " << (*mpTokenTypeNames)[(*mLookAheadSymbol)->mType] 
+      //          << std::endl;
+      return ((*(std::next(mLookAheadSymbol)))->mType == tt);
+   }
+
    bool match(BLR_TOKEN_TYPE tt) {
       bool rval = false;
-      std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] << std::endl;
-      std::cout << "   Match Next : " << (*mpTokenTypeNames)[(*mLookAheadSymbol)->mType] 
-                << std::endl;
       if ((**mLookAheadSymbol).mType == tt) {
+         if (mVerbose) {
+            std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] << std::endl;
+         }
          ++mLookAheadSymbol;
          rval = true;
       }
