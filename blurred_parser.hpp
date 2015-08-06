@@ -429,7 +429,7 @@ public:
             if (rval) { rval = simple_term(); }
          }
          else if (isnext(blr_token_name) && issecondnext(blr_token_leftpar)) {
-         
+            if (rval) { rval = call(); }
          }
          else if (match(blr_token_name))    {}
          else if (match(blr_token_true))    {}
@@ -457,6 +457,61 @@ public:
       return rval;
    }
   
+   bool call() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<call>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_name); }
+      if (rval) { rval = match(blr_token_leftpar); }
+      if (rval) { rval = args(); }
+      if (rval) { rval = match(blr_token_rightpar); }      
+      
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+
+   bool args() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<args>" << std::endl;
+      }
+      
+      if (rval && !isnext(blr_token_rightpar)) {
+         if (rval) { rval = args_list(); }
+      }
+      
+      if (!rval) {
+         error();
+      }
+
+      return rval;
+   }
+   
+   bool args_list() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<args-list>" << std::endl;
+      }
+      
+      do {
+         if (rval) { rval = simple_expression(); }
+      } while (rval && match(blr_token_comma));
+      
+      if (!rval) {
+         error();
+      }
+
+      return rval;      
+   }
+
 
    bool statement() {
       bool rval = true;

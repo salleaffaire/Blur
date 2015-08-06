@@ -100,11 +100,11 @@
 <simple-term-tail> ::= <bin-operator-2> <simple-factor> |
                        <bin-operator-2> <simple-factor> <simple-term-tail> | 
                        ''
-<factor> ::=  <call> |
-              <constant> |
-              <mutable> |
-              <un-opertor> <simple-term> |
-              ( <simple-expression> )
+<simple-factor> ::=  <call> |
+                     <constant> |
+                     <mutable> |
+                     <un-opertor> <simple-term> |
+                     ( <simple-expression> )
               
 
 # Weak operators
