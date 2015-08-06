@@ -455,11 +455,16 @@ public:
          bool need_new_token = true;
          blr_token *current_token;
 
+         mCurrentLineNumber = 1;
+         mCurrentCharacterOnLine = 1;
+
          while (pc < pe) {
             std::cout << *pc;
             if (need_new_token) {
                current_token = new blr_token;
                current_token->mValue[0] = 0x00;
+               current_token->mLineNumber = mCurrentLineNumber;
+               current_token->mCharacterOnLine = 0;
                need_new_token = false;
             }
 
@@ -521,6 +526,10 @@ public:
                   }
                }
             }
+            else if (*pc == '\n') {
+               ++mCurrentLineNumber;
+               ++pc;
+            }
             // It's something else
             else {
                // Advance the pointer  
@@ -555,6 +564,9 @@ private:
 
    BLR_LEXER_STATE mState;
    BLR_LEXER_ERROR mError;
+
+   unsigned int mCurrentLineNumber;
+   unsigned int mCurrentCharacterOnLine;
 
    std::list<std::shared_ptr<blr_token>>  mTokenList;
    std::map<std::string, BLR_TOKEN_TYPE>  mReservedWords;

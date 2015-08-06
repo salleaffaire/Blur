@@ -76,6 +76,8 @@ enum BLR_TOKEN_TYPE {
 struct blr_token {
    BLR_TOKEN_TYPE   mType;
    char             mValue[MAX_TOKEN_SIZE];
+   unsigned int     mLineNumber;
+   unsigned int     mCharacterOnLine;
 };
 
 
