@@ -9,7 +9,7 @@
 // LL(1) parser - very simple and perhaps not very efficient
 // had to introduce 'var' and 'func' keyword to simplify the grammar
 // and make it more LL(1) friendly
-// ------------------------------------------------------------------ 
+// ------------------------------------------------------------------
 
 // Production Rules
 // -----------------------------------------------
@@ -123,7 +123,10 @@ public:
       }
       else if (isnext(blr_token_func)) {
          rval = fun_declaration();
-      } 
+      }
+      else if (isnext(blr_token_using)) {
+         rval = using_clause();
+      }
       else {
          rval = false;
          error();
@@ -134,6 +137,23 @@ public:
       } 
       
       return rval;
+   }
+
+   bool using_clause() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<using_clause>" << std::endl;
+      }
+
+      if (rval) { rval = match(blr_token_using); }
+      if (rval) { rval = match(blr_token_literal); }
+
+      if (mVerboseDebug) {
+         std::cout << "EXIT : <using_clause>" << std::endl;
+      } 
+      
+      return rval;      
    }
    
    bool struct_declaration() {
@@ -174,7 +194,7 @@ public:
          // Conditional Variable <data-definition-tail>
          if (match(blr_token_if)) {
             if (rval) { rval = match(blr_token_leftpar); }
-            if (rval) { rval = simple_expression(); }
+            if (rval) { rval = complex_expression(); }
             if (rval) { rval = match(blr_token_rightpar); }
          }
 
@@ -316,7 +336,7 @@ public:
       }      
       
       return rval;
-   }   
+   }
    
    bool base_type() {
       bool rval = true;
@@ -358,7 +378,7 @@ public:
       }
       else {
          // Here we take a guess but it really can't be anything else
-         if (rval) { rval = simple_expression(); }
+         if (rval) { rval = complex_expression(); }
       }
    
       if (!rval) {
@@ -370,6 +390,29 @@ public:
       }
 
       return rval;
+   }
+
+   bool complex_expression() {
+      bool rval = true;
+      if (mVerbose) {
+         std::cout << "<complex_expression>" << std::endl;
+      } 
+
+      if (rval) { rval = simple_expression(); }
+      
+      while (rval && match(blr_token_dot)) {
+         call();
+      }
+
+      if (!rval) {
+         error();
+      }
+
+      if (mVerboseDebug) {
+         std::cout << "EXIT : <complex_expression>" << std::endl;
+      } 
+
+      return rval;      
    }
 
    bool simple_expression() {
@@ -437,7 +480,7 @@ public:
          else if (match(blr_token_numeral)) {}
          else if (match(blr_token_literal)) {}
          else if (match(blr_token_leftpar)) {
-            if (rval) { rval = simple_expression(); }
+            if (rval) { rval = complex_expression(); }
             if (rval) { match(blr_token_rightpar); }
          }
          else {
@@ -502,7 +545,7 @@ public:
       }
       
       do {
-         if (rval) { rval = simple_expression(); }
+         if (rval) { rval = complex_expression(); }
       } while (rval && match(blr_token_comma));
       
       if (!rval) {

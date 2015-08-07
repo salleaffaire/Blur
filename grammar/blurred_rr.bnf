@@ -12,7 +12,11 @@
 <decdef-list> ::= <decdef> <decdef-rest>
 <decdef-rest> ::= <decdef> <decdef-rest> | ''
 
-<decdef> ::= <data-definition> | <fun-declaration> | <struct-declaration>
+<decdef> ::= <data-definition> | <fun-declaration> | <struct-declaration> | <using>
+
+# Struct
+# ----------------------------------------------------------------------------------------
+<using> ::= using literal
 
 # Struct
 # ----------------------------------------------------------------------------------------
@@ -24,7 +28,7 @@
                       <data-definition-front> <data-definition-tail> ; 
 
 <data-definition-front> ::= var <type-specifier> name
-<data-definition-tail>  ::= if ( <simple-expression> )
+<data-definition-tail>  ::= if ( <complex-expression> )
 
 <type-specifier> ::= <base-type> <array-definition> |
                      <base-type>
@@ -84,10 +88,14 @@
 
 # Expressions
 <expression> ::= <mutable> = <expression> | 
-                 <simple-expression>
+                 <complex-expression>
 
 # <simple-expression> is my r-value
 # I think I finally got an LL(1) expression grammar
+
+<complex-expression> ::= <simple-expression> <complex-expression-tail>
+<complex-expression-tail> ::= . <call>
+
 <simple-expression> ::= <simple-term> <simple-expression-tail>
 <simple-expression-tail> ::= <bin-operator-1> <simple-term> |
                              <bin-operator-1> <simple-term> <simple-expression-tail> | 
@@ -96,15 +104,12 @@
 <simple-term-tail> ::= <bin-operator-2> <simple-factor> |
                        <bin-operator-2> <simple-factor> <simple-term-tail> | 
                        ''
-<simple-factor> ::= <simple-factor> <simple-term-tail>
-<simple-term-tail> ::= <bin-operator-2> <simple-factor> |
-                       <bin-operator-2> <simple-factor> <simple-term-tail> | 
-                       ''
+
 <simple-factor> ::=  <call> |
                      <constant> |
                      <mutable> |
                      <un-opertor> <simple-term> |
-                     ( <simple-expression> )
+                     ( <complex-expression> )
               
 
 # Weak operators
@@ -121,7 +126,7 @@
 
 <arg-list> ::= <arg-list> , <arg> | <arg>
 
-<arg> ::= <simple-expression>
+<arg> ::= <complex-expression>
 
 <constant> ::= numeral | 
                literal |
