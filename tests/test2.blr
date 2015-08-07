@@ -16,6 +16,11 @@ func bit[32] foo(bit[32] n1, list{bit[32]} l1) {
       return;
    } 
    else {
+      var bit[16] a;
+      a = 16;
+      while (a > 0) {
+         a = a - 1;
+      }
       if (name2 <= "name") {
          // Do something usefull
          var bit[32][128] foo_var if (name2 == 64);
