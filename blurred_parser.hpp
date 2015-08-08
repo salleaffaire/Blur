@@ -53,7 +53,7 @@ enum BLR_RULE {
 
 class blr_parser {
 public:
-   blr_parser() : mVerbose(true), mReported(false), mVerboseDebug(false),
+   blr_parser() : mVerbose(true), mReported(false), mVerboseDebug(false), mState(true),
                   mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
 
    ~blr_parser() {}
@@ -71,408 +71,359 @@ public:
       
    }
 
-   bool program() {
-      bool rval = true;
+   // Compiler entry point 
+   // <program> is a list of declararions and definitions
+   void program() {
+      mState = true;
 
       if (mVerbose) {
          std::cout << "<program>" << std::endl;
       }
 
-      rval = decdef_list();
+      decdef_list();
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <program>" << std::endl;
       }      
-
-      return rval;
    }
 
-   bool decdef_list() {
-      bool rval = true;
-      
+   void decdef_list() {
       if (mVerbose) {
          std::cout << "<decdef_list>" << std::endl;
       }      
       
       do {
-         if (rval) { rval = decdef(); }
-      } while (rval && !IsEnd() && !isnext(blr_token_rightbrace));
+         if (mState) { decdef(); }
+      } while (mState && !IsEnd() && !isnext(blr_token_rightbrace));
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <decdef_list>" << std::endl;
       } 
-
-      return rval;
    }
 
-   bool decdef() {
-      bool rval = true;
-
+   void decdef() {
       if (mVerbose) {
          std::cout << "<decdef>" << std::endl;
       }
 
       if (isnext(blr_token_struct)) {
-         rval = struct_declaration();
+         struct_declaration();
       }
       else if (isnext(blr_token_if)) {
-         rval = data_definition();
+         data_definition();
       }
       else if (isnext(blr_token_var)) {
-         rval = data_definition();
+         data_definition();
       }
       else if (isnext(blr_token_func)) {
-         rval = fun_declaration();
+         fun_declaration();
       }
       else if (isnext(blr_token_using)) {
-         rval = using_clause();
+         using_clause();
       }
       else {
-         rval = false;
+         mState = false;
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <decdef>" << std::endl;
       } 
-      
-      return rval;
    }
 
-   bool using_clause() {
-      bool rval = true;
-
+   void using_clause() {
       if (mVerbose) {
          std::cout << "<using_clause>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_using); }
-      if (rval) { rval = match(blr_token_literal); }
+      if (mState) { mState = match(blr_token_using); }
+      if (mState) { mState = match(blr_token_literal); }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <using_clause>" << std::endl;
-      } 
-      
-      return rval;      
+      }     
    }
    
-   bool struct_declaration() {
-      bool rval = true;
-
+   void struct_declaration() {
       if (mVerbose) {
          std::cout << "<struct_declaration>" << std::endl;
       }
       
-      if (rval) { rval = match(blr_token_struct); }
-      if (rval) { rval = match(blr_token_name); }
-      if (rval) { rval = match(blr_token_leftbrace); }
-      if (rval) { rval = decdef_list(); }
-      if (rval) { rval = match(blr_token_rightbrace); }
+      if (mState) { mState = match(blr_token_struct); }
+      if (mState) { mState = match(blr_token_name); }
+      if (mState) { mState = match(blr_token_leftbrace); }
+      if (mState) { decdef_list(); }
+      if (mState) { mState = match(blr_token_rightbrace); }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <struct_declaration>" << std::endl;
       }
-
-      return rval;
    }
 
-   bool data_definition() {
-      bool rval = true;
-
+   void data_definition() {
       if (mVerbose) {
          std::cout << "<data_definition>" << std::endl;
       }
 
       if (match(blr_token_var)) {
-         if (rval) { rval = type_specifier(); }
-         if (rval) { rval = match(blr_token_name); }
+         if (mState) { type_specifier(); }
+         if (mState) { mState = match(blr_token_name); }
 
          // Conditional Variable <data-definition-tail>
          if (match(blr_token_if)) {
-            if (rval) { rval = match(blr_token_leftpar); }
-            if (rval) { rval = complex_expression(); }
-            if (rval) { rval = match(blr_token_rightpar); }
+            if (mState) { mState = match(blr_token_leftpar); }
+            if (mState) { complex_expression(); }
+            if (mState) { mState = match(blr_token_rightpar); }
          }
 
-         if (rval) { rval = match(blr_token_semicolon); }
+         if (mState) { mState = match(blr_token_semicolon); }
       }
       else {
-         rval = false;
+         mState = false;
          error();
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <data_definition>" << std::endl;
       }
-     
-      return rval;
    }
    
-   bool type_specifier() {
-      bool rval = true;
-      
+   void type_specifier() {    
       if (mVerbose) {
          std::cout << "<type_specifier>" << std::endl;
       }
       
-      if (rval) { rval = base_type(); }
-      if (rval) { 
-         if (isnext(blr_token_leftbracket)) { rval = array_definition(); }
+      if (mState) { base_type(); }
+      if (mState) { 
+         if (isnext(blr_token_leftbracket)) { array_definition(); }
       }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }     
  
       if (mVerboseDebug) {
          std::cout << "<EXIT : type_specifier>" << std::endl;
       }
-      
-      return rval;
    }
    
-   bool fun_declaration() {
-      bool rval = true;
-      
+   void fun_declaration() {
       if (mVerbose) {
          std::cout << "<fun_declaration>" << std::endl;
       }
       
-      if (rval) { rval = match(blr_token_func); }
-      if (rval) { rval = type_specifier(); }
-      if (rval) { rval = match(blr_token_name); }
-      if (rval) { rval = match(blr_token_leftpar); }
-      if (rval) { rval = params(); }
-      if (rval) { rval = match(blr_token_rightpar); }
-      //if (rval) { rval = match(blr_token_leftbrace); }
-      if (rval) { rval = statement(); }
-      //if (rval) { rval = match(blr_token_rightbrace); }
+      if (mState) { mState = match(blr_token_func); }
+      if (mState) { type_specifier(); }
+      if (mState) { mState = match(blr_token_name); }
+      if (mState) { mState = match(blr_token_leftpar); }
+      if (mState) { params(); }
+      if (mState) { mState = match(blr_token_rightpar); }
+      //if (mState) { mState = match(blr_token_leftbrace); }
+      if (mState) { statement(); }
+      //if (mState) { mState = match(blr_token_rightbrace); }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT: <fun_declaration>" << std::endl;
       }
-      
-      return rval;
    }
    
-   bool params() {
-      bool rval = true;
-      
+   void params() { 
       if (mVerbose) {
          std::cout << "<params>" << std::endl;
       }
       
-      if (rval) { 
+      if (mState) { 
          if (isnext(blr_token_rightpar)) {} 
-         else { rval = param_list(); }
+         else { param_list(); }
       }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <params>" << std::endl;
       }
-      
-      return rval;
    }
    
-   bool param_list() {
-      bool rval = true;
-      
+   void param_list() {      
       if (mVerbose) {
          std::cout << "<param-list>" << std::endl;
       }
       
       do {
-         if (rval) { rval = type_specifier(); }
-         if (rval) { rval = match(blr_token_name); }
-      } while (rval && match(blr_token_comma));
+         if (mState) { type_specifier(); }
+         if (mState) { mState = match(blr_token_name); }
+      } while (mState && match(blr_token_comma));
                
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <param-list>" << std::endl;
       }
-      
-      return rval;
    }
 
-   bool array_definition() {
-      bool rval = true;
+   void array_definition() {
       if (mVerbose) {
          std::cout << "<array_definition>" << std::endl;
       }      
-      while (rval && isnext(blr_token_leftbracket)) {
-         if (rval) { rval = match(blr_token_leftbracket); }
-         if (rval) { 
+      while (mState && isnext(blr_token_leftbracket)) {
+         if (mState) { mState = match(blr_token_leftbracket); }
+         if (mState) { 
             if (match(blr_token_numeral)) {}
             else if (match(blr_token_dotdot)) {}
-            else { rval = false; }
+            else { mState = false; }
          }
-         if (rval) { rval = match(blr_token_rightbracket); }
+         if (mState) { mState = match(blr_token_rightbracket); }
       }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
       if (mVerboseDebug) {
          std::cout << "EXIT : <array_definition>" << std::endl;
-      }      
-      
-      return rval;
+      }
    }
    
-   bool base_type() {
-      bool rval = true;
+   void base_type() {
       if (mVerbose) {
          std::cout << "<base_type>" << std::endl;
       } 
-      if (rval) {
-         if (rval = match(blr_token_bit)) {}
-         else if (rval = match(blr_token_list)) {
-            if (rval) { rval = match(blr_token_leftbrace); }
-            if (rval) { rval = type_specifier(); }
-            if (rval) { rval = match(blr_token_rightbrace); }
+      if (mState) {
+         if (mState = match(blr_token_bit)) {}
+         else if (mState = match(blr_token_list)) {
+            if (mState) { mState = match(blr_token_leftbrace); }
+            if (mState) { type_specifier(); }
+            if (mState) { mState = match(blr_token_rightbrace); }
          }
-         else if (rval = match(blr_token_void)) {}
-         else if (rval = match(blr_token_name)) {}
+         else if (mState = match(blr_token_void)) {}
+         else if (mState = match(blr_token_name)) {}
       }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <base_type>" << std::endl;
       } 
-
-      return rval;
    }
 
-  bool expression() {
-      bool rval = true;
+   void expression() {
       if (mVerbose) {
          std::cout << "<expression>" << std::endl;
       }
       
       if (isnext(blr_token_name) && issecondnext(blr_token_assignment)) {
-         if (rval) { rval = match(blr_token_name); }
-         if (rval) { rval = match(blr_token_assignment); }
-         if (rval) { rval = expression(); }
+         if (mState) { mState = match(blr_token_name); }
+         if (mState) { mState = match(blr_token_assignment); }
+         if (mState) { expression(); }
       }
       else {
          // Here we take a guess but it really can't be anything else
-         if (rval) { rval = complex_expression(); }
+         if (mState) { complex_expression(); }
       }
    
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <expression>" << std::endl;
       }
-
-      return rval;
    }
 
-   bool complex_expression() {
-      bool rval = true;
+   void complex_expression() {
+
       if (mVerbose) {
          std::cout << "<complex_expression>" << std::endl;
       } 
 
-      if (rval) { rval = simple_expression(); }
+      if (mState) { simple_expression(); }
       
-      while (rval && match(blr_token_dot)) {
-         call();
+      while (mState && match(blr_token_dot)) {
+         if (match(blr_token_rightarrow)) { 
+            defered_call();
+         }
+         else {
+            call();
+         }
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <complex_expression>" << std::endl;
-      } 
-
-      return rval;      
+      }     
    }
 
-   bool simple_expression() {
-      bool rval = true;
+   void simple_expression() {
       if (mVerbose) {
          std::cout << "<simple_expression>" << std::endl;
       } 
       
-      if (rval) { rval = simple_term(); }
+      if (mState) { simple_term(); }
       
-      while (rval && matchbin1()) {
-         if (rval) { rval = simple_term(); } 
+      while (mState && matchbin1()) {
+         if (mState) { simple_term(); } 
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_expression>" << std::endl;
       } 
-
-      return rval;
    }
 
-   bool simple_term() {
-      bool rval = true;
+   void simple_term() {
       if (mVerbose) {
          std::cout << "<simple_term>" << std::endl;
       } 
       
-      if (rval) { rval = simple_factor(); }
+      if (mState) { simple_factor(); }
 
-      while (rval && matchbin2()) {
-         if (rval) { rval = simple_factor(); } 
+      while (mState && matchbin2()) {
+         if (mState) { simple_factor(); } 
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_term>" << std::endl;
-      } 
-
-      return rval;
+      }
    }
    
-   bool simple_factor() {
-      bool rval = true;
+   void simple_factor() {
       if (mVerbose) {
          std::cout << "<simple_factor>" << std::endl;
       } 
 
-      if (rval) {
+      if (mState) {
          if (matchun()) {
-            if (rval) { rval = simple_term(); }
+            if (mState) { simple_term(); }
          }
          else if (isnext(blr_token_name) && issecondnext(blr_token_leftpar)) {
-            if (rval) { rval = call(); }
+            if (mState) { call(); }
          }
          else if (match(blr_token_name))    {}
          else if (match(blr_token_true))    {}
@@ -480,309 +431,257 @@ public:
          else if (match(blr_token_numeral)) {}
          else if (match(blr_token_literal)) {}
          else if (match(blr_token_leftpar)) {
-            if (rval) { rval = complex_expression(); }
-            if (rval) { match(blr_token_rightpar); }
+            if (mState) { complex_expression(); }
+            if (mState) { match(blr_token_rightpar); }
          }
          else if (match(blr_token_rightarrow)) {
-            if (rval) { rval = defered_call(); }
+            if (mState) { defered_call(); }
          }
          else {
             // Empty expression
-            rval = false;
+            mState = false;
          }
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_factor>" << std::endl;
       } 
-
-      return rval;
    }
 
-   bool defered_call() {
-      bool rval = true;
-
+   void defered_call() {
       if (mVerbose) {
          std::cout << "<defered-call>" << std::endl;
       }
 
-      if (rval) {rval = call(); }
+      if (mState) { call(); }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
   
-   bool call() {
-      bool rval = true;
-
+   void call() {
       if (mVerbose) {
          std::cout << "<call>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_name); }
-      if (rval) { rval = match(blr_token_leftpar); }
-      if (rval) { rval = args(); }
-      if (rval) { rval = match(blr_token_rightpar); }      
+      if (mState) { mState = match(blr_token_name); }
+      if (mState) { mState = match(blr_token_leftpar); }
+      if (mState) { args(); }
+      if (mState) { mState = match(blr_token_rightpar); }      
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
 
-      return rval;
    }
 
-   bool args() {
-      bool rval = true;
-
+   void args() {
       if (mVerbose) {
          std::cout << "<args>" << std::endl;
       }
       
-      if (rval && !isnext(blr_token_rightpar)) {
-         if (rval) { rval = args_list(); }
+      if (mState && !isnext(blr_token_rightpar)) {
+         if (mState) { args_list(); }
       }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
    
    bool args_list() {
-      bool rval = true;
-
       if (mVerbose) {
          std::cout << "<args-list>" << std::endl;
       }
       
       do {
-         if (rval) { rval = complex_expression(); }
-      } while (rval && match(blr_token_comma));
+         if (mState) { complex_expression(); }
+      } while (mState && match(blr_token_comma));
       
-      if (!rval) {
+      if (!mState) {
          error();
-      }
-
-      return rval;      
+      }      
    }
 
 
-   bool statement() {
-      bool rval = true;
-
+   void statement() {
       if (mVerbose) {
          std::cout << "<statement>" << std::endl;
       }
 
-      if (rval) {
+      if (mState) {
          if (isnext(blr_token_var)) {
-            if (rval) { rval = data_definition(); }
+            if (mState) { data_definition(); }
          }
          else if (isnext(blr_token_if)) {
-            if (rval) { rval = if_statement(); }
+            if (mState) { if_statement(); }
          }
          else if (isnext(blr_token_break)) {
-            if (rval) { rval = break_statement(); }
+            if (mState) { break_statement(); }
          }
          else if (isnext(blr_token_return)) {
-            if (rval) { rval = return_statement(); }
+            if (mState) { return_statement(); }
          }
          else if (isnext(blr_token_leftbrace)) {
-            if (rval) { rval = compound_statement(); }
+            if (mState) { compound_statement(); }
          }
          else if (isnext(blr_token_while)) {
-            if (rval) { rval = while_statement(); }
+            if (mState) { while_statement(); }
          }
          else if (isnext(blr_token_foreach)) {
-            if (rval) { rval = foreach_statement(); }
+            if (mState) { foreach_statement(); }
          }
          else if (isnext(blr_token_for)) {
-            if (rval) { rval = for_statement(); }
+            if (mState) { for_statement(); }
          }
          else {
             // Try an expression statement
-            if (rval) { rval = expression_statement(); }
+            if (mState) { expression_statement(); }
          }
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool expression_statement() {
-      bool rval = true;
-
+   void expression_statement() {
       if (mVerbose) {
          std::cout << "<expression_statement>" << std::endl;
       }
 
-      while (rval && !match(blr_token_semicolon)) {
-         if (rval) { rval = expression(); }
+      while (mState && !match(blr_token_semicolon)) {
+         if (mState) { expression(); }
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool if_statement() {
-      bool rval = true;
-
+   void if_statement() {
       if (mVerbose) {
          std::cout << "<if_statement>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_if); }
-      if (rval) { rval = match(blr_token_leftpar); }
-      if (rval) { rval = expression(); }
-      if (rval) { rval = match(blr_token_rightpar); }
-      if (rval) { rval = statement(); }
+      if (mState) { mState = match(blr_token_if); }
+      if (mState) { mState = match(blr_token_leftpar); }
+      if (mState) { expression(); }
+      if (mState) { mState = match(blr_token_rightpar); }
+      if (mState) { statement(); }
       if (match(blr_token_else)) {
-         if (rval) { rval = statement(); }
+         if (mState) { statement(); }
       }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool for_statement() {
-      bool rval = true;
-
+   void for_statement() {
       if (mVerbose) {
          std::cout << "<if_statement>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_for); }
-      if (rval) { rval = match(blr_token_leftpar); }
-      if (rval) { rval = expression(); }
-      if (rval) { rval = match(blr_token_semicolon); }
-      if (rval) { rval = expression(); }
-      if (rval) { rval = match(blr_token_semicolon); }
-      if (rval) { rval = expression(); }
-      if (rval) { rval = match(blr_token_rightpar); }
-      if (rval) { rval = statement(); }
+      if (mState) { mState = match(blr_token_for); }
+      if (mState) { mState = match(blr_token_leftpar); }
+      if (mState) { expression(); }
+      if (mState) { mState = match(blr_token_semicolon); }
+      if (mState) { expression(); }
+      if (mState) { mState = match(blr_token_semicolon); }
+      if (mState) { expression(); }
+      if (mState) { mState = match(blr_token_rightpar); }
+      if (mState) { statement(); }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool while_statement() {
-      bool rval = true;
-
+   void while_statement() {
       if (mVerbose) {
          std::cout << "<while_statement>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_while); }
-      if (rval) { rval = match(blr_token_leftpar); }
-      if (rval) { rval = expression(); }
-      if (rval) { rval = match(blr_token_rightpar); }
-      if (rval) { rval = statement(); }
-      if (!rval) {
+      if (mState) { mState = match(blr_token_while); }
+      if (mState) { mState = match(blr_token_leftpar); }
+      if (mState) { expression(); }
+      if (mState) { mState = match(blr_token_rightpar); }
+      if (mState) { statement(); }
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool foreach_statement() {
-      bool rval = true;
-
+   void foreach_statement() {
       if (mVerbose) {
          std::cout << "<foreach_statement>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_foreach); }
-      if (rval) { rval = match(blr_token_leftpar); }
-      if (rval) { rval = match(blr_token_name); }
-      if (rval) { rval = match(blr_token_in); }
-      if (rval) { rval = match(blr_token_name); }
-      if (rval) { rval = statement(); }
-      if (!rval) {
+      if (mState) { mState = match(blr_token_foreach); }
+      if (mState) { mState = match(blr_token_leftpar); }
+      if (mState) { mState = match(blr_token_name); }
+      if (mState) { mState = match(blr_token_in); }
+      if (mState) { mState = match(blr_token_name); }
+      if (mState) { statement(); }
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool break_statement() {
-      bool rval = true;
-
+   void break_statement() {
       if (mVerbose) {
          std::cout << "<break_statement>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_break); }
-      if (rval) { rval = match(blr_token_semicolon); }
+      if (mState) { mState = match(blr_token_break); }
+      if (mState) { mState = match(blr_token_semicolon); }
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool return_statement() {
-      bool rval = true;
+   void return_statement() {
 
       if (mVerbose) {
          std::cout << "<return_statement>" << std::endl;
       }
 
-      if (rval) { rval = match(blr_token_return); }
+      if (mState) { mState = match(blr_token_return); }
       if (!isnext(blr_token_semicolon)) {
-         rval = expression();
+         expression();
       }
-      if (rval) { rval = match(blr_token_semicolon); }
+      if (mState) { mState = match(blr_token_semicolon); }
       
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
-   bool compound_statement() {
-      bool rval = true;
-
+   void compound_statement() {
       if (mVerbose) {
          std::cout << "<compound_statement>" << std::endl;
       }
 
       // Open Brace {
-      if (rval) { rval = match(blr_token_leftbrace); } 
+      if (mState) { mState = match(blr_token_leftbrace); } 
       
-      while (rval && !isnext(blr_token_rightbrace)) {
-         rval = statement();
+      while (mState && !isnext(blr_token_rightbrace)) {
+         statement();
       }
       
       // Close Brace }
-      if (rval) { rval = match(blr_token_rightbrace); } 
+      if (mState) { mState = match(blr_token_rightbrace); } 
 
-      if (!rval) {
+      if (!mState) {
          error();
       }
-
-      return rval;
    }
 
    bool isnext(BLR_TOKEN_TYPE tt) {
@@ -880,6 +779,8 @@ private:
    bool mVerbose;
    bool mReported;
    bool mVerboseDebug;
+
+   bool mState;
 
    bool IsEnd() {
       return (mLookAheadSymbol == mpTokenList->end());

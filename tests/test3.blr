@@ -9,11 +9,17 @@ struct a {
    }
 }
 
+func void bar() {
+
+}
+
 func bit[32] main() {
    var a a_var1;
    var bit[32] a_var2;
 
    avar_2 = a_var1.->foo(4);
+
+   ->bar();
 
    return a_var2;
 }
