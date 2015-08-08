@@ -483,6 +483,9 @@ public:
             if (rval) { rval = complex_expression(); }
             if (rval) { match(blr_token_rightpar); }
          }
+         else if (match(blr_token_rightarrow)) {
+            if (rval) { rval = defered_call(); }
+         }
          else {
             // Empty expression
             rval = false;
@@ -496,6 +499,22 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_factor>" << std::endl;
       } 
+
+      return rval;
+   }
+
+   bool defered_call() {
+      bool rval = true;
+
+      if (mVerbose) {
+         std::cout << "<defered-call>" << std::endl;
+      }
+
+      if (rval) {rval = call(); }
+      
+      if (!rval) {
+         error();
+      }
 
       return rval;
    }

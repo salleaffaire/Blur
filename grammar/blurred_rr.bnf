@@ -105,12 +105,13 @@
                        <bin-operator-2> <simple-factor> <simple-term-tail> | 
                        ''
 
-<simple-factor> ::=  <call> |
+<simple-factor> ::=  <defered-call> |
+                     <call> |
                      <constant> |
                      <mutable> |
                      <un-opertor> <simple-term> |
                      ( <complex-expression> )
-              
+
 
 # Weak operators
 <bin-operator-1> ::= + | - | & | ^ | < | > | <= | >= | == | >> | << | && 
@@ -119,6 +120,8 @@
 <bin-operator-2> ::= * | / | %
 
 <un-operator> ::= + | - | ! | ~
+
+<defered-call> ::= -> <call>
 
 <call> ::= name ( <args> )
 

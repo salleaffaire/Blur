@@ -92,31 +92,31 @@ public:
       mTokenTypeNames[blr_token_true]          = "True";
       mTokenTypeNames[blr_token_false]         = "False";
 
-      mTokenTypeNames[blr_token_list]          = "List";  
+      mTokenTypeNames[blr_token_list]          = "List";
       mTokenTypeNames[blr_token_bit]           = "Bit";
       mTokenTypeNames[blr_token_void]          = "Void";
 
       // Operators
-      mTokenTypeNames[blr_token_slash]         = "Slash";  
-      mTokenTypeNames[blr_token_plus]          = "Plus";  
-      mTokenTypeNames[blr_token_minus]         = "Minus"; 
+      mTokenTypeNames[blr_token_slash]         = "Slash";
+      mTokenTypeNames[blr_token_plus]          = "Plus";
+      mTokenTypeNames[blr_token_minus]         = "Minus";
       mTokenTypeNames[blr_token_star]          = "Star";
       mTokenTypeNames[blr_token_modulo]        = "Modulo";
-      mTokenTypeNames[blr_token_leftpar]       = "Left Parenthese";  
-      mTokenTypeNames[blr_token_rightpar]      = "Right Parenthese";  
-      mTokenTypeNames[blr_token_leftbrace]     = "Left Brace";  
-      mTokenTypeNames[blr_token_rightbrace]    = "Right Brace";  
-      mTokenTypeNames[blr_token_leftbracket]   = "Left Bracket";  
-      mTokenTypeNames[blr_token_rightbracket]  = "Right Bracket";  
-      mTokenTypeNames[blr_token_semicolon]     = "Semicolon";  
-      mTokenTypeNames[blr_token_comma]         = "Comma";  
-      mTokenTypeNames[blr_token_dot]           = "Dot";  
-      mTokenTypeNames[blr_token_dotdot]        = "Dot Dot";  
-      mTokenTypeNames[blr_token_equal]         = "Equal";  
-      mTokenTypeNames[blr_token_notequal]      = "Not Equal";  
-      mTokenTypeNames[blr_token_greater]       = "Greater";  
-      mTokenTypeNames[blr_token_lesser]        = "Lesser";  
-      mTokenTypeNames[blr_token_greaterequal]  = "Greater or Equal";  
+      mTokenTypeNames[blr_token_leftpar]       = "Left Parenthese";
+      mTokenTypeNames[blr_token_rightpar]      = "Right Parenthese";
+      mTokenTypeNames[blr_token_leftbrace]     = "Left Brace";
+      mTokenTypeNames[blr_token_rightbrace]    = "Right Brace";
+      mTokenTypeNames[blr_token_leftbracket]   = "Left Bracket";
+      mTokenTypeNames[blr_token_rightbracket]  = "Right Bracket";
+      mTokenTypeNames[blr_token_semicolon]     = "Semicolon";
+      mTokenTypeNames[blr_token_comma]         = "Comma";
+      mTokenTypeNames[blr_token_dot]           = "Dot";
+      mTokenTypeNames[blr_token_dotdot]        = "Dot Dot";
+      mTokenTypeNames[blr_token_equal]         = "Equal";
+      mTokenTypeNames[blr_token_notequal]      = "Not Equal";
+      mTokenTypeNames[blr_token_greater]       = "Greater";
+      mTokenTypeNames[blr_token_lesser]        = "Lesser";
+      mTokenTypeNames[blr_token_greaterequal]  = "Greater or Equal";
       mTokenTypeNames[blr_token_lesserequal]   = "Lesser or Equal";
       mTokenTypeNames[blr_token_rightarrow]    = "Right Arrow";  
       mTokenTypeNames[blr_token_not]           = "Not";  
@@ -130,6 +130,7 @@ public:
       mTokenTypeNames[blr_token_leftshift]     = "Left Shift";  
       mTokenTypeNames[blr_token_rightshift]    = "Right Shift";  
       mTokenTypeNames[blr_token_assignment]    = "Assignment";
+      mTokenTypeNames[blr_token_hash]          = "Assignment";
 
       // Constant - Numerals
       mTokenTypeNames[blr_token_numeral]       = "Numeral";  
@@ -322,6 +323,11 @@ public:
          ++(*pc);
          break;
 
+      case '#':
+         token->mType = blr_token_hash;
+         ++(*pc);
+         break;
+
       case '=':
          token->mType = blr_token_assignment;
          ++(*pc);
@@ -495,7 +501,7 @@ public:
                      (*pc == ';') || (*pc == '.') || (*pc == '<') ||
                      (*pc == '>') || (*pc == '=') || (*pc == '!') ||
                      (*pc == '^') || (*pc == '&') || (*pc == '|') ||
-                     (*pc == ',') || (*pc == '%')) {
+                     (*pc == ',') || (*pc == '%') || (*pc == '#')) {
                if (blr_readoperator(&pc, current_token)) {
                   mTokenList.push_back(std::shared_ptr<blr_token>(current_token));
                   need_new_token = true;

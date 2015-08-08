@@ -1,21 +1,19 @@
 // Test some comments
-
-var bit[16] a;
-
 using "IO"
 
 struct a {
    var list{bit[32]} mList;
 
-   func void foo(bit[32] x) {
-
+   func bit[32] foo(bit[32] x) {
+      return x + 1;
    }
 }
 
 func bit[32] main() {
    var a a_var1;
-   var a a_var2;
+   var bit[32] a_var2;
 
-   a_var1.foo(foo(), foo());
+   avar_2 = a_var1.->foo(4);
+
+   return a_var2;
 }
-

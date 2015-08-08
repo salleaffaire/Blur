@@ -65,6 +65,7 @@ enum BLR_TOKEN_TYPE {
    blr_token_leftshift,
    blr_token_rightshift,
    blr_token_assignment,
+   blr_token_hash,
    
    // Numerals
    blr_token_numeral,
