@@ -32,11 +32,11 @@ enum BLR_TOKEN_TYPE {
    blr_token_false,
 
    // Operators
-   blr_token_slash,
-   blr_token_plus,
-   blr_token_minus,
-   blr_token_star,
-   blr_token_modulo,
+   blr_token_slash,        // Binary
+   blr_token_plus,         // Binary
+   blr_token_minus,        // Binary
+   blr_token_star,         // Binary
+   blr_token_modulo,       // Binary
    blr_token_leftpar,
    blr_token_rightpar,
    blr_token_leftbrace,
@@ -47,23 +47,23 @@ enum BLR_TOKEN_TYPE {
    blr_token_comma,
    blr_token_dot,
    blr_token_dotdot,
-   blr_token_equal,
-   blr_token_notequal,
-   blr_token_greater,
-   blr_token_lesser,
-   blr_token_greaterequal,
-   blr_token_lesserequal,
+   blr_token_equal,        // Binary
+   blr_token_notequal,     // Binary
+   blr_token_greater,      // Binary
+   blr_token_lesser,       // Binary
+   blr_token_greaterequal, // Binary
+   blr_token_lesserequal,  // Binary
    blr_token_rightarrow,
    blr_token_not,
-   blr_token_or,
-   blr_token_and,
-   blr_token_xor,
+   blr_token_or,           // Binary
+   blr_token_and,          // Binary
+   blr_token_xor,          // Binary
    blr_token_bwnot,
-   blr_token_bwor,
-   blr_token_bwand,
-   blr_token_bwxor,
-   blr_token_leftshift,
-   blr_token_rightshift,
+   blr_token_bwor,         // Binary
+   blr_token_bwand,        // Binary
+   blr_token_bwxor,        // Binary
+   blr_token_leftshift,    // Binary
+   blr_token_rightshift,   // Binary
    blr_token_assignment,
    blr_token_hash,
    

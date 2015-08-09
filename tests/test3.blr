@@ -17,7 +17,7 @@ func bit[32] main() {
    var a a_var1;
    var bit[32] a_var2;
 
-   avar_2 = a_var1.->foo(4);
+   avar_2 = a_var1.->foo(->bar());
 
    ->bar();
 
