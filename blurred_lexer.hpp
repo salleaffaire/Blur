@@ -94,6 +94,7 @@ public:
 
       mTokenTypeNames[blr_token_list]          = "List";
       mTokenTypeNames[blr_token_bit]           = "Bit";
+      mTokenTypeNames[blr_token_bit]           = "Byte";
       mTokenTypeNames[blr_token_void]          = "Void";
 
       // Operators
@@ -152,6 +153,7 @@ public:
       mReservedWords["using"]   = blr_token_using;      
       mReservedWords["sizeof"]  = blr_token_sizeof;
       mReservedWords["bit"]     = blr_token_bit;
+      mReservedWords["byte"]    = blr_token_byte;
       mReservedWords["list"]    = blr_token_list;
       mReservedWords["void"]    = blr_token_void;
       mReservedWords["return"]  = blr_token_return;

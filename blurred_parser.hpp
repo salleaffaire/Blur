@@ -54,6 +54,7 @@ enum BLR_RULE {
 class blr_parser {
 public:
    blr_parser() : mVerbose(true), mReported(false), mVerboseDebug(false), mState(true),
+                  mTypeSpecifierLevel(0),
                   mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
 
    ~blr_parser() {}
@@ -101,7 +102,8 @@ public:
       } 
    }
 
-   void decdef() {
+   blr_ast_node *decdef() {
+      blr_ast_node *rval = 0;
       if (mVerbose) {
          std::cout << "<decdef>" << std::endl;
       }
@@ -128,7 +130,8 @@ public:
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <decdef>" << std::endl;
-      } 
+      }
+      return rval;
    }
 
    void using_clause() {
@@ -144,19 +147,34 @@ public:
       }     
    }
    
-   void struct_declaration() {
+   blr_ast_node *struct_declaration() {
+      std::vector<blr_ast_node *> decdefs;
+      std::string name;
+
       if (mVerbose) {
          std::cout << "<struct_declaration>" << std::endl;
       }
       
       if (mState) { mState = match(blr_token_struct); }
       if (mState) { mState = match(blr_token_name); }
+      if (mState) { name = mLastMatchedValue; }
       if (mState) { mState = match(blr_token_leftbrace); }
-      if (mState) { decdef_list(); }
+      if (mState) { 
+         do {
+            if (mState) { 
+               blr_ast_node *rval = decdef(); 
+               if (mState) { decdefs.push_back(rval); }
+            }
+            
+         } while (mState && !IsEnd() && !isnext(blr_token_rightbrace));
+      }
       if (mState) { mState = match(blr_token_rightbrace); }
 
       if (!mState) {
          error();
+      }
+      else {
+         blr_ast_node *rval = new blr_ast_node_struct(name, std::move(decdefs));
       }
 
       if (mVerboseDebug) {
@@ -195,26 +213,7 @@ public:
          std::cout << "EXIT : <data_definition>" << std::endl;
       }
    }
-   
-   void type_specifier() {    
-      if (mVerbose) {
-         std::cout << "<type_specifier>" << std::endl;
-      }
-      
-      if (mState) { base_type(); }
-      if (mState) { 
-         if (isnext(blr_token_leftbracket)) { array_definition(); }
-      }
-      
-      if (!mState) {
-         error();
-      }     
- 
-      if (mVerboseDebug) {
-         std::cout << "<EXIT : type_specifier>" << std::endl;
-      }
-   }
-   
+  
    void fun_declaration() {
       if (mVerbose) {
          std::cout << "<fun_declaration>" << std::endl;
@@ -277,41 +276,94 @@ public:
       }
    }
 
-   void array_definition() {
+   blr_ast_node *type_specifier() {
+      blr_ast_node * rval;
+      ++mTypeSpecifierLevel;
       if (mVerbose) {
-         std::cout << "<array_definition>" << std::endl;
-      }      
-      while (mState && isnext(blr_token_leftbracket)) {
-         if (mState) { mState = match(blr_token_leftbracket); }
-         if (mState) { 
-            if (match(blr_token_numeral)) {}
-            else if (match(blr_token_dotdot)) {}
-            else { mState = false; }
+         std::cout << "<type_specifier>" << std::endl;
+      }
+      
+      if (mState) { rval = base_type(); }
+      if (mState) { 
+         while (mState && isnext(blr_token_leftbracket)) { 
+            blr_ast_node_array *array_ast = array_definition();
+            array_ast->mOf = rval;
+            rval = array_ast;
          }
-         if (mState) { mState = match(blr_token_rightbracket); }
       }
       
       if (!mState) {
          error();
+      }     
+ 
+      if (mVerboseDebug) {
+         std::cout << "<EXIT : type_specifier>" << std::endl;
+      }
+      --mTypeSpecifierLevel;
+      if (0 == mTypeSpecifierLevel) {
+         mASTTypes.push_back(rval);
+      }
+      return rval;
+   }
+   
+   // This function works but could easily be optimized
+   // A better implementation would be to cerate a specialized match_numeral
+   // and capture the translated string (to unsigned int) and have
+   // size as an uint in the AST node. 
+   blr_ast_node_array *array_definition() {
+      blr_ast_node_array *rval = 0;
+      std::string array_size;
+      if (mVerbose) {
+         std::cout << "<array_definition>" << std::endl;
+      }
+      
+      if (mState) { mState = match(blr_token_leftbracket); }
+      if (mState) {
+            if (match(blr_token_numeral)) {
+               array_size = mLastMatchedValue;
+            }
+            else if (match(blr_token_dotdot)) {}
+            else { mState = false; }
+      }
+      if (mState) { mState = match(blr_token_rightbracket); }
+      
+      if (!mState) {
+         error();
+      }
+      else {
+         rval = new blr_ast_node_array(array_size);
       }
       if (mVerboseDebug) {
          std::cout << "EXIT : <array_definition>" << std::endl;
       }
+      return rval;
    }
    
-   void base_type() {
+   blr_ast_node *base_type() {
+      blr_ast_node *rval;
       if (mVerbose) {
          std::cout << "<base_type>" << std::endl;
       } 
       if (mState) {
-         if (mState = match(blr_token_bit)) {}
-         else if (mState = match(blr_token_list)) {
-            if (mState) { mState = match(blr_token_leftbrace); }
-            if (mState) { type_specifier(); }
-            if (mState) { mState = match(blr_token_rightbrace); }
+         if (mState = match(blr_token_bit)) {
+            rval = new blr_ast_node_base_type("bit", blr_type_bit);
          }
-         else if (mState = match(blr_token_void)) {}
-         else if (mState = match(blr_token_name)) {}
+         else if (mState = match(blr_token_byte)) {
+            rval = new blr_ast_node_base_type("byte", blr_type_byte);
+         }
+         else if (mState = match(blr_token_list)) {
+            blr_ast_node *list_type;
+            if (mState) { mState = match(blr_token_leftbrace); }
+            if (mState) { list_type = type_specifier(); }
+            if (mState) { mState = match(blr_token_rightbrace); }
+            rval = new blr_ast_node_list("list", list_type);
+         }
+         else if (mState = match(blr_token_void)) {
+            rval = new blr_ast_node_base_type("void", blr_type_void);
+         }
+         else if (mState = match(blr_token_name)) {
+            rval = new blr_ast_node_base_type("struct", blr_type_struct);
+         }
       }
       
       if (!mState) {
@@ -320,7 +372,8 @@ public:
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <base_type>" << std::endl;
-      } 
+      }
+      return rval;
    }
 
    void expression() {
@@ -705,12 +758,15 @@ public:
             std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] 
                    << " -> " << (**mLookAheadSymbol).mValue << std::endl;
          }
+         mLastMatchedValue = (**mLookAheadSymbol).mValue;
          ++mLookAheadSymbol;
          rval = true;
       }
       return rval;
    }
 
+   // Match any weak operators (low order)
+   // 
    bool matchbin1() {
       bool rval = false;
       BLR_TOKEN_TYPE tt = (**mLookAheadSymbol).mType;
@@ -738,6 +794,8 @@ public:
       return rval;
    }
 
+   // Match any strong operators (high order)
+   // 
    bool matchbin2() {
       bool rval = false;
       BLR_TOKEN_TYPE tt = (**mLookAheadSymbol).mType;
@@ -773,6 +831,55 @@ public:
          mReported = true;
       } 
    }
+   
+   void output_type_name(blr_ast_node *x) {
+      // We have a struct
+      if (blr_ast_node_struct *p = dynamic_cast<blr_ast_node_struct *>(x)) {
+         std::cout << "Struct { " << std::endl;
+         for (auto &x: p->mDecDefs) {
+            output_type_name(x);
+         }
+         std::cout << "}" << std::cout;
+      }
+      // We have a base type
+      else if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
+         if (p->mType == blr_type_bool) {
+            std::cout << "bool" << std::endl;
+         }
+         else if (p->mType == blr_type_string) {
+            std::cout << "string" << std::endl;
+         }
+         else if (p->mType == blr_type_bit) {
+            std::cout << "bit" << std::endl;
+         }         
+         else if (p->mType == blr_type_byte) {
+            std::cout << "byte" << std::endl;
+         }
+         else if (p->mType == blr_type_void) {
+            std::cout << "void" << std::endl;
+         }
+      }
+      // We have a struct
+      else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(x)) {
+         std::cout << "Array of ";
+         output_type_name(p->mOf);
+      }
+      // We have a struct
+      else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(x)) {
+         std::cout << "List of ";
+         output_type_name(p->mOf);
+      }
+      // We have a struct
+      else  {
+         std::cout << "Func" << std::endl;
+      }
+   }
+
+   void output_all_types() {
+      for (auto &x: mASTTypes) {
+         output_type_name(x);
+      }
+   }
 
 private:
 
@@ -790,6 +897,8 @@ private:
    std::list<std::shared_ptr<blr_token>>           *mpTokenList;
    std::map<BLR_TOKEN_TYPE, std::string>           *mpTokenTypeNames;
 
+   std::string mLastMatchedValue;
+
    // Current look-ahead symbol
    std::list<std::shared_ptr<blr_token>>::iterator mLookAheadSymbol;
 
@@ -800,7 +909,12 @@ private:
    std::map<BLR_RULE, std::list<blr_token>> mFollow;
 
    // AST TREE
-   blr_ast_node mASTRoot;
+   blr_ast_node *mASTRoot;
+
+   // Types (AST Trees)
+   unsigned int mTypeSpecifierLevel;
+   std::list<blr_ast_node *> mASTTypes;
+  
 
 };
 

@@ -58,6 +58,9 @@ int main(int argc, char *argv[]) {
                   lexer.get_token_type_names());  
       // Call the top level production
       parser.program();
+
+      // Output all types
+      parser.output_all_types();
    }
 #endif
      

@@ -1,0 +1,22 @@
+// Some comments
+var list{byte} myvar;
+
+struct foo {
+   var list{list{byte[32][32]}[16]} history;
+   var bit[32] a;
+   func bit[32] aplus(bit[32] x) {
+      return a + x;
+   }
+}
+
+func void bar() {
+   var byte[4] a;
+}
+
+// Some more comments
+func void main() {
+   var foo x;
+
+   x.->aplus(10);
+   ->bar();
+}
