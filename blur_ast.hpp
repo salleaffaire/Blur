@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <string>
 
-#include "blurred_token.hpp"
+#include "blur_token.hpp"
 
 
 enum BLR_TYPE {
@@ -16,7 +16,7 @@ enum BLR_TYPE {
    blr_type_bit,
    blr_type_byte,
    blr_type_void,
-   blr_type_struct
+   blr_type_dectype
 };
 
 class blr_ast_node {
@@ -152,15 +152,20 @@ public:
       mName(name), mOf(of) {}
 };
 
-// Variable declaration
+// Variable definition
 // ---------------------------------------------------------------------------------
-class blr_ast_node_variable_declaration: public blr_ast_node {
+class blr_ast_node_variable_definition: public blr_ast_node {
 public:
-   std::string mName;
-   BLR_TYPE    mType;
+   virtual ~blr_ast_node_variable_definition() {
+      delete mCond;
+      delete mType;
+   }
+   std::string   mName;
+   blr_ast_node *mType;
+   blr_ast_node *mCond;
 
-   blr_ast_node_variable_declaration(std::string name, BLR_TYPE type) :
-      mName(name), mType(type) {}
+   blr_ast_node_variable_definition(std::string name, blr_ast_node *type, blr_ast_node *cond) :
+      mName(name), mType(type), mCond(cond) {}
 };
 
 

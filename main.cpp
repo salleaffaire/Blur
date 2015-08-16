@@ -3,8 +3,8 @@
 
 #include "bnf_parser.hpp"
 
-#include "blurred_lexer.hpp"
-#include "blurred_parser.hpp"
+#include "blur_lexer.hpp"
+#include "blur_parser.hpp"
 
 char* getCmdOption(char ** begin, char ** end, const std::string & option) {
    char ** itr = std::find(begin, end, option);
@@ -61,6 +61,10 @@ int main(int argc, char *argv[]) {
 
       // Output all types
       parser.output_all_types();
+
+      // Output all structs
+      parser.output_all_structs();
+      
    }
 #endif
      

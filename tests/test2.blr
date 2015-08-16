@@ -2,6 +2,15 @@ var list{bit[32]}[32] name1;
 var bit[32]           name2;
 var bit[32]           name3 if ( 0 );
 
+struct foo {
+   var byte a;
+   var byte b;
+   var void c;
+}
+
+var list{foo}[32] array_of_foo;
+
+
 func bit[32] bar(bit[32] a, bit[32] b) {
    return a*b;
 }

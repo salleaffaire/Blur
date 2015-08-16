@@ -2,8 +2,8 @@
 #define BLURRED_PARSER_TD_PRED_HPP___
 
 #include <list>
-#include "blurred_lexer.hpp"
-#include "blurred_ast.hpp"
+#include "blur_lexer.hpp"
+#include "blur_ast.hpp"
 
 // First version
 // LL(1) parser - very simple and perhaps not very efficient
@@ -109,10 +109,7 @@ public:
       }
 
       if (isnext(blr_token_struct)) {
-         struct_declaration();
-      }
-      else if (isnext(blr_token_if)) {
-         data_definition();
+         rval = struct_declaration();
       }
       else if (isnext(blr_token_var)) {
          data_definition();
@@ -134,6 +131,32 @@ public:
       return rval;
    }
 
+   blr_ast_node *decdef_struct() {
+      blr_ast_node *rval = 0;
+      if (mVerbose) {
+         std::cout << "<decdef_struct>" << std::endl;
+      }
+
+      if (isnext(blr_token_struct)) {
+         rval = struct_declaration();
+      }
+      else if (isnext(blr_token_var)) {
+         rval = data_definition();
+      }
+      else if (isnext(blr_token_func)) {
+         fun_declaration();
+      }
+      else {
+         mState = false;
+         error();
+      }
+
+      if (mVerboseDebug) {
+         std::cout << "EXIT : <decdef_struct>" << std::endl;
+      }
+      return rval;
+   }
+
    void using_clause() {
       if (mVerbose) {
          std::cout << "<using_clause>" << std::endl;
@@ -150,6 +173,7 @@ public:
    blr_ast_node *struct_declaration() {
       std::vector<blr_ast_node *> decdefs;
       std::string name;
+      blr_ast_node *rval;
 
       if (mVerbose) {
          std::cout << "<struct_declaration>" << std::endl;
@@ -162,7 +186,7 @@ public:
       if (mState) { 
          do {
             if (mState) { 
-               blr_ast_node *rval = decdef(); 
+               rval = decdef_struct(); 
                if (mState) { decdefs.push_back(rval); }
             }
             
@@ -174,22 +198,32 @@ public:
          error();
       }
       else {
-         blr_ast_node *rval = new blr_ast_node_struct(name, std::move(decdefs));
+         rval = new blr_ast_node_struct(name, std::move(decdefs));
+         mASTStructs.push_back(rval);
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <struct_declaration>" << std::endl;
       }
+      return rval;
    }
 
-   void data_definition() {
+   blr_ast_node *data_definition() {
+      blr_ast_node *rval = 0;
+      blr_ast_node *cond = 0;
+      blr_ast_node *type = 0;
+      std::string name;
+
       if (mVerbose) {
          std::cout << "<data_definition>" << std::endl;
       }
 
       if (match(blr_token_var)) {
-         if (mState) { type_specifier(); }
-         if (mState) { mState = match(blr_token_name); }
+         if (mState) { type = type_specifier(); }
+         if (mState) { 
+            mState = match(blr_token_name);
+            if (mState) { name = mLastMatchedValue; }
+         }
 
          // Conditional Variable <data-definition-tail>
          if (match(blr_token_if)) {
@@ -208,10 +242,14 @@ public:
       if (!mState) {
          error();
       }
+      else {
+         rval = new blr_ast_node_variable_definition(name, type, cond);
+      }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <data_definition>" << std::endl;
       }
+      return rval;
    }
   
    void fun_declaration() {
@@ -362,7 +400,7 @@ public:
             rval = new blr_ast_node_base_type("void", blr_type_void);
          }
          else if (mState = match(blr_token_name)) {
-            rval = new blr_ast_node_base_type("struct", blr_type_struct);
+            rval = new blr_ast_node_base_type(mLastMatchedValue, blr_type_dectype);
          }
       }
       
@@ -858,6 +896,9 @@ public:
          else if (p->mType == blr_type_void) {
             std::cout << "void" << std::endl;
          }
+         else if (p->mType == blr_type_dectype) {
+            std::cout << p->mName << std::endl;
+         }
       }
       // We have a struct
       else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(x)) {
@@ -875,11 +916,49 @@ public:
       }
    }
 
+   void output_struct(blr_ast_node *x) {
+      std::cout << "struct {" << std::endl;
+      for (auto &y: dynamic_cast<blr_ast_node_struct *>(x)->mDecDefs) {
+         //std::cout << x << std::endl;
+         // We have a struct
+         if (blr_ast_node_struct *p = dynamic_cast<blr_ast_node_struct *>(y)) {
+            output_struct(p);
+         }
+         // We have a var
+         else if (blr_ast_node_variable_definition *p = 
+                  dynamic_cast<blr_ast_node_variable_definition *>(y)) {
+            std::cout << "var " << p->mName << " -> ";
+            output_type_name(p->mType);
+            if (p->mCond) {
+               // Output condition
+            }
+         }
+         // We have a struct
+         else  {
+            std::cout << "func" << std::endl;
+         }
+      }
+      std::cout << "}" << std::endl;
+   }
+
    void output_all_types() {
+      std::cout << "----------------------------------------------------------------" << std::endl;
+      std::cout << "Output " << mASTTypes.size() << " type(s)" << std::endl;
       for (auto &x: mASTTypes) {
          output_type_name(x);
       }
+      std::cout << std::endl;
+   } 
+
+   void output_all_structs() {
+      std::cout << "----------------------------------------------------------------" << std::endl;
+      std::cout << "Output " << mASTStructs.size() << " struct(s)" << std::endl;
+      for (auto &x: mASTStructs) {
+         output_struct(x);
+      }
+      std::cout << std::endl;
    }
+
 
 private:
 
@@ -914,8 +993,9 @@ private:
    // Types (AST Trees)
    unsigned int mTypeSpecifierLevel;
    std::list<blr_ast_node *> mASTTypes;
-  
 
+   // Structs (AST Trees)
+   std::list<blr_ast_node *> mASTStructs;
 };
 
 #endif

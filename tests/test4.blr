@@ -7,6 +7,9 @@ struct foo {
    func bit[32] aplus(bit[32] x) {
       return a + x;
    }
+   struct goo {
+      var list{list{void[..]}}[..] x;
+   }
 }
 
 func void bar() {

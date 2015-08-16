@@ -8,7 +8,7 @@
 #include <map>
 #include <memory>
 
-#include "blurred_token.hpp"
+#include "blur_token.hpp"
 
 #define MIN(X,Y) ((X < Y) ? (X) : (Y))
 
