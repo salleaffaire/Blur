@@ -6,6 +6,8 @@
 #include "blur_lexer.hpp"
 #include "blur_parser.hpp"
 
+// Simple command line parser
+// -------------------------------------------------------------------------------
 char* getCmdOption(char ** begin, char ** end, const std::string & option) {
    char ** itr = std::find(begin, end, option);
    if (itr != end && ++itr != end) {
@@ -17,7 +19,7 @@ char* getCmdOption(char ** begin, char ** end, const std::string & option) {
 bool cmdOptionExists(char** begin, char** end, const std::string& option) {
    return std::find(begin, end, option) != end;
 }
-
+// -------------------------------------------------------------------------------
 
 int main(int argc, char *argv[]) {
       
