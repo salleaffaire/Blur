@@ -2,6 +2,7 @@
 #define BLURRED_PARSER_TD_PRED_HPP___
 
 #include <list>
+#include <stdlib.h>
 #include "blur_lexer.hpp"
 #include "blur_ast.hpp"
 
@@ -419,6 +420,7 @@ public:
          std::cout << "<expression>" << std::endl;
       }
       
+      // Is it am assignement ?
       if (isnext(blr_token_name) && issecondnext(blr_token_assignment)) {
          if (mState) { mState = match(blr_token_name); }
          if (mState) { mState = match(blr_token_assignment); }
@@ -438,16 +440,17 @@ public:
       }
    }
 
-   void complex_expression() {
+   blr_ast_node *complex_expression() {
+      blr_ast_node *rval;
+      std::string callee;
 
       if (mVerbose) {
          std::cout << "<complex_expression>" << std::endl;
       } 
 
-      if (mState) { simple_expression(); }
-      
+      if (mState) { rval = simple_expression(); }
       while (mState && match(blr_token_dot)) {
-         if (match(blr_token_rightarrow)) { 
+         if (match(blr_token_rightarrow)) {	   
             defered_call();
          }
          else {
@@ -461,18 +464,26 @@ public:
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <complex_expression>" << std::endl;
-      }     
+      }
+      return rval; 
    }
 
-   void simple_expression() {
+   blr_ast_node *simple_expression() {
+      blr_ast_node *rval;
+
       if (mVerbose) {
          std::cout << "<simple_expression>" << std::endl;
       } 
       
-      if (mState) { simple_term(); }
+      if (mState) { rval = simple_term(); }
       
       while (mState && matchbin1()) {
-         if (mState) { simple_term(); } 
+	 if (mVerbose) {
+	    std::cout << "Binary Operator" << std::endl;
+	 } 
+         if (mState) { 
+	    rval = new blr_ast_node_expression_binary_op(mLastMatchedTokenType, rval, simple_term());
+	 } 
       }
 
       if (!mState) {
@@ -482,17 +493,24 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_expression>" << std::endl;
       } 
+      return rval;
    }
 
-   void simple_term() {
+   blr_ast_node *simple_term() {
+      blr_ast_node *rval = 0;
       if (mVerbose) {
          std::cout << "<simple_term>" << std::endl;
       } 
       
-      if (mState) { simple_factor(); }
+      if (mState) { rval = simple_factor(); }
 
       while (mState && matchbin2()) {
-         if (mState) { simple_factor(); } 
+	 if (mVerbose) {
+	    std::cout << "Binary Operator" << std::endl;
+	 } 	 
+         if (mState) { 
+	    rval = new blr_ast_node_expression_binary_op(mLastMatchedTokenType, rval, simple_factor());
+	 } 
       }
 
       if (!mState) {
@@ -502,31 +520,50 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_term>" << std::endl;
       }
+      return rval;
    }
    
-   void simple_factor() {
+   blr_ast_node *simple_factor() {
+      blr_ast_node *rval;
       if (mVerbose) {
          std::cout << "<simple_factor>" << std::endl;
       } 
 
       if (mState) {
+	 // Unary Operators
          if (matchun()) {
-            if (mState) { simple_term(); }
+	    if (mVerbose) {
+	       std::cout << "Unary Operator" << std::endl;
+	    } 
+	    if (mState) { 
+	       rval = new blr_ast_node_expression_unary_op(mLastMatchedTokenType, simple_term());
+	    }
          }
+	 // Function Call
          else if (isnext(blr_token_name) && issecondnext(blr_token_leftpar)) {
-            if (mState) { call(); }
+            if (mState) { rval = call(); }
          }
-         else if (match(blr_token_name))    {}
-         else if (match(blr_token_true))    {}
-         else if (match(blr_token_false))   {}
-         else if (match(blr_token_numeral)) {}
-         else if (match(blr_token_literal)) {}
+         else if (match(blr_token_name))    {
+	    rval = new blr_ast_node_expression_variable(mLastMatchedValue);
+	 }
+         else if (match(blr_token_true))    {
+	    rval = new blr_ast_node_expression_boolean(true);
+	 }
+         else if (match(blr_token_false))   {
+	    rval = new blr_ast_node_expression_boolean(false);
+	 }
+         else if (match(blr_token_numeral)) {
+	    rval = new blr_ast_node_expression_number(atoi(mLastMatchedValue.c_str()));
+	 }
+         else if (match(blr_token_literal)) {
+	    rval = new blr_ast_node_expression_literal(mLastMatchedValue);
+	 }
          else if (match(blr_token_leftpar)) {
-            if (mState) { complex_expression(); }
+            if (mState) { rval = complex_expression(); }
             if (mState) { match(blr_token_rightpar); }
          }
          else if (match(blr_token_rightarrow)) {
-            if (mState) { defered_call(); }
+            if (mState) { rval = defered_call(); }
          }
          else {
             // Empty expression
@@ -541,62 +578,87 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <simple_factor>" << std::endl;
       } 
+
+      return rval;
    }
 
-   void defered_call() {
+   blr_ast_node *defered_call() {
+      blr_ast_node *rval = 0;
       if (mVerbose) {
          std::cout << "<defered-call>" << std::endl;
       }
 
-      if (mState) { call(); }
+      if (mState) { rval = call(); }
       
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_expression_defered_call(rval);
+      }
+      return rval;
    }
   
-   void call() {
+   blr_ast_node *call() {
+      blr_ast_node *rval = 0;
+      std::string name;
+      std::vector<blr_ast_node *> a;
       if (mVerbose) {
          std::cout << "<call>" << std::endl;
       }
 
       if (mState) { mState = match(blr_token_name); }
+      name = mLastMatchedValue;
       if (mState) { mState = match(blr_token_leftpar); }
-      if (mState) { args(); }
+      if (mState) { a = args(); }
       if (mState) { mState = match(blr_token_rightpar); }      
       
       if (!mState) {
          error();
       }
-
+      else {
+	 rval = new blr_ast_node_expression_call(name, a);
+      }
+      return rval;
    }
 
-   void args() {
+   std::vector<blr_ast_node *> args() {
+      std::vector<blr_ast_node *> rval;
+
       if (mVerbose) {
          std::cout << "<args>" << std::endl;
       }
       
+      // We used this seperation between <args> and <args_list> to test for an empty list 
+      // Like this: ()
       if (mState && !isnext(blr_token_rightpar)) {
-         if (mState) { args_list(); }
+         if (mState) { rval = args_list(); }
       }
       
       if (!mState) {
          error();
       }
+      return rval;
    }
    
-   bool args_list() {
+   std::vector<blr_ast_node *> args_list() {
+      // Returning the vector may be a bit slow, it'll need to be optimized later
+      // For now I just want to have it working
+      std::vector<blr_ast_node *> rval;
+      blr_ast_node *curr_arg;
       if (mVerbose) {
          std::cout << "<args-list>" << std::endl;
       }
       
       do {
-         if (mState) { complex_expression(); }
+         if (mState) { curr_arg = complex_expression(); }
+	 if (mState) { rval.push_back(curr_arg); }
       } while (mState && match(blr_token_comma));
       
       if (!mState) {
          error();
-      }      
+      }
+      return rval;
    }
 
 
@@ -825,7 +887,8 @@ public:
           (tt == blr_token_rightshift)) {
 
          std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] 
-                   << " -> " << (**mLookAheadSymbol).mValue << std::endl;         
+                   << " -> " << (**mLookAheadSymbol).mValue << std::endl;
+	 mLastMatchedTokenType = (**mLookAheadSymbol).mType;
          ++mLookAheadSymbol;
          rval = true;         
       }
@@ -842,6 +905,7 @@ public:
           (tt == blr_token_modulo)) {
          std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] 
                    << " -> " << (**mLookAheadSymbol).mValue << std::endl;
+	 mLastMatchedTokenType = (**mLookAheadSymbol).mType;
          ++mLookAheadSymbol;
          rval = true;         
       }
@@ -857,6 +921,7 @@ public:
           (tt == blr_token_bwnot)) {
          std::cout << "   Match In   : " << (*mpTokenTypeNames)[tt] 
                    << " -> " << (**mLookAheadSymbol).mValue << std::endl;
+	 mLastMatchedTokenType = (**mLookAheadSymbol).mType;
          ++mLookAheadSymbol;
          rval = true;         
       }
@@ -977,6 +1042,7 @@ private:
    std::map<BLR_TOKEN_TYPE, std::string>           *mpTokenTypeNames;
 
    std::string mLastMatchedValue;
+   BLR_TOKEN_TYPE mLastMatchedTokenType;
 
    // Current look-ahead symbol
    std::list<std::shared_ptr<blr_token>>::iterator mLookAheadSymbol;

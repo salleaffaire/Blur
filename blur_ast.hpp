@@ -72,11 +72,17 @@ public:
    std::string mCallee;
    std::vector<blr_ast_node *> mArgs;
    blr_ast_node_expression_call(std::string callee, std::vector<blr_ast_node *> a) : 
-      mCallee(callee), mArgs(a) {}   
+      mCallee(callee), mArgs(a) {}
 };
 
 class blr_ast_node_expression_defered_call : public blr_ast_node_expression {
 public:
+   virtual ~blr_ast_node_expression_defered_call() {
+      delete mCall;
+   }
+   blr_ast_node *mCall;
+   blr_ast_node_expression_defered_call(blr_ast_node * call) : 
+      mCall(call) {}  
 };
 
 class blr_ast_node_expression_binary_op : public blr_ast_node_expression {
@@ -173,8 +179,16 @@ public:
 // ---------------------------------------------------------------------------------
 class blr_ast_node_function_prototype : public blr_ast_node {
 public:
+   virtual ~blr_ast_node_function_prototype() {
+      delete mStatement;
+   }
    std::string           mName;
-   std::vector<BLR_TYPE> mArgType;
+   std::vector<BLR_TYPE> mParamTypes;
+   blr_ast_node         *mStatement;
+
+   blr_ast_node_function_prototype(std::string name, std::vector<BLR_TYPE> paramtypes, blr_ast_node *st) :
+      mName(name), mParamTypes(paramtypes), mStatement(st) {}
+   
 };
 
 
