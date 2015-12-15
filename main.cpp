@@ -66,6 +66,9 @@ int main(int argc, char *argv[]) {
 
       // Output all structs
       parser.output_all_structs();
+
+      // Output all Functions
+      parser.output_all_functions();
       
    }
 #endif

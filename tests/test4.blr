@@ -14,6 +14,14 @@ struct foo {
 
 func void bar() {
    var byte[4] a;
+
+   {
+      var bit[32] x;
+      // Note that for take expression;expression;statement
+      for (x=0;x<4;{x=x-1;}) {
+         x = x;
+      }
+   }  
 }
 
 // Some more comments

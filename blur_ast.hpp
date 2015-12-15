@@ -111,6 +111,19 @@ public:
       mOp(op), mExp(e) {}
 };
 
+class blr_ast_node_assignment : public blr_ast_node {
+public:
+   virtual ~blr_ast_node_assignment() {
+      delete mLeft;
+      delete mRight;
+   }
+   blr_ast_node  *mLeft;
+   blr_ast_node  *mRight;
+   blr_ast_node_assignment(blr_ast_node *left,
+			   blr_ast_node *right) : 
+      mLeft(left), mRight(right) {}
+};
+
 // Type declaration
 // ---------------------------------------------------------------------------------
 class blr_ast_node_struct: public blr_ast_node {
@@ -158,6 +171,20 @@ public:
       mName(name), mOf(of) {}
 };
 
+// Variable declaration
+// ---------------------------------------------------------------------------------
+class blr_ast_node_variable_declaration: public blr_ast_node {
+public:
+   virtual ~blr_ast_node_variable_declaration() {
+      delete mType;
+   }
+   std::string   mName;
+   blr_ast_node *mType;
+
+   blr_ast_node_variable_declaration(std::string name, blr_ast_node *type) :
+      mName(name), mType(type) {}
+};
+
 // Variable definition
 // ---------------------------------------------------------------------------------
 class blr_ast_node_variable_definition: public blr_ast_node {
@@ -175,21 +202,131 @@ public:
 };
 
 
-// Function Declaration and Definition AST nodes
+
+// Function Declaration 
 // ---------------------------------------------------------------------------------
 class blr_ast_node_function_prototype : public blr_ast_node {
 public:
    virtual ~blr_ast_node_function_prototype() {
       delete mStatement;
+      delete mReturnType;
+      for (auto &x: mParamTypes) {
+	 delete x;
+      }
    }
-   std::string           mName;
-   std::vector<BLR_TYPE> mParamTypes;
-   blr_ast_node         *mStatement;
+   std::string                  mName;
+   std::vector<std::string>     mMemberOf;
+   std::vector<blr_ast_node *>  mParamTypes;
+   blr_ast_node                *mReturnType;
+   blr_ast_node                *mStatement;
 
-   blr_ast_node_function_prototype(std::string name, std::vector<BLR_TYPE> paramtypes, blr_ast_node *st) :
-      mName(name), mParamTypes(paramtypes), mStatement(st) {}
+   blr_ast_node_function_prototype(std::string name, std::vector<std::string> memberof, 
+				   std::vector<blr_ast_node *> paramtypes, blr_ast_node *rt, blr_ast_node *st) :
+      mName(name), mMemberOf(memberof), mParamTypes(paramtypes), mReturnType(rt), mStatement(st) {}
    
 };
 
+// Function DeclarationStatements 
+// --------------------------------------------------------------------------------- 
+class blr_ast_node_statement : public blr_ast_node {
+public:
+   virtual ~blr_ast_node_statement() {}
+};
+
+class blr_ast_node_statement_if : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_if() {
+      delete mCondition;
+      delete mIfStatement;
+      delete mElseStatement;
+   }
+   
+   blr_ast_node *mCondition;
+   blr_ast_node *mIfStatement;
+   blr_ast_node *mElseStatement;
+
+   blr_ast_node_statement_if(blr_ast_node *cond, blr_ast_node *ifs, blr_ast_node *elses) :
+      mCondition(cond), mIfStatement(ifs), mElseStatement(elses) {}
+};
+
+class blr_ast_node_statement_while : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_while() {
+      delete mCondition;
+      delete mLoopStatement;
+   }
+   
+   blr_ast_node *mCondition;
+   blr_ast_node *mLoopStatement;
+
+
+   blr_ast_node_statement_while(blr_ast_node *cond, blr_ast_node *loopstatement) :
+      mCondition(cond), mLoopStatement(loopstatement) {}
+};
+
+class blr_ast_node_statement_for : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_for() {
+      delete mInit;
+      delete mCondition;
+      delete mUpdate;
+      delete mLoopStatement;
+   }
+   
+   blr_ast_node *mInit;
+   blr_ast_node *mCondition;
+   blr_ast_node *mUpdate;
+   blr_ast_node *mLoopStatement;
+
+
+   blr_ast_node_statement_for(blr_ast_node *init, blr_ast_node *cond, blr_ast_node *update, blr_ast_node *loopstatement) :
+      mInit(init), mCondition(cond), mUpdate(update), mLoopStatement(loopstatement) {}
+};
+
+class blr_ast_node_statement_foreach : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_foreach() {;
+      delete mLoopStatement;
+   }
+   
+   std::string   mElement;
+   std::string   mContainer;
+   blr_ast_node *mLoopStatement;
+
+
+   blr_ast_node_statement_foreach(std::string elem, std::string container,  blr_ast_node *loopstatement) :
+      mElement(elem), mContainer(container), mLoopStatement(loopstatement) {}
+};
+
+class blr_ast_node_statement_break : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_break() {
+   }
+
+   blr_ast_node_statement_break() {}
+};
+
+class blr_ast_node_statement_return : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_return() {
+      delete mRval;
+   }
+   blr_ast_node *mRval;
+   
+   blr_ast_node_statement_return(blr_ast_node *rval) : mRval(rval) {}
+};
+
+class blr_ast_node_statement_compound : public blr_ast_node_statement {
+public:
+   virtual ~blr_ast_node_statement_compound() {
+      for (auto &x: mStatementList) {
+         delete x;
+      }        
+   }
+   std::vector<blr_ast_node *> mStatementList;
+   
+   blr_ast_node_statement_compound(std::vector<blr_ast_node *> statementlist) :
+      mStatementList(statementlist) {}
+};
 
 #endif

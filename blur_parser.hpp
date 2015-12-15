@@ -73,8 +73,13 @@ public:
       
    }
 
+   // ------------------------------------------------------------------------------------
+   // AST tree parsing and building
+   // ------------------------------------------------------------------------------------
+
    // Compiler entry point 
    // <program> is a list of declararions and definitions
+   // ------------------------------------------------------------------------------------
    void program() {
       mState = true;
 
@@ -182,12 +187,16 @@ public:
       
       if (mState) { mState = match(blr_token_struct); }
       if (mState) { mState = match(blr_token_name); }
-      if (mState) { name = mLastMatchedValue; }
+      if (mState) { 
+	 name = mLastMatchedValue;
+	 // Set the structure depth - keeping track of scope 
+	 mStructureDepth.push_back(name);
+      }
       if (mState) { mState = match(blr_token_leftbrace); }
       if (mState) { 
          do {
             if (mState) { 
-               rval = decdef_struct(); 
+               rval = decdef_struct();
                if (mState) { decdefs.push_back(rval); }
             }
             
@@ -201,10 +210,47 @@ public:
       else {
          rval = new blr_ast_node_struct(name, std::move(decdefs));
          mASTStructs.push_back(rval);
+	 mStructureDepth.pop_back();
       }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <struct_declaration>" << std::endl;
+      }
+      return rval;
+   }
+
+   blr_ast_node *data_declaration() {
+      blr_ast_node *rval = 0;
+      blr_ast_node *type = 0;
+      std::string name;
+
+      if (mVerbose) {
+         std::cout << "<data_declaration>" << std::endl;
+      }
+
+      if (match(blr_token_var)) {
+         if (mState) { type = type_specifier(); }
+         if (mState) { 
+            mState = match(blr_token_name);
+            if (mState) { name = mLastMatchedValue; }
+         }
+
+         if (mState) { mState = match(blr_token_semicolon); }
+      }
+      else {
+         mState = false;
+         error();
+      }
+
+      if (!mState) {
+         error();
+      }
+      else {
+         rval = new blr_ast_node_variable_declaration(name, type);
+      }
+
+      if (mVerboseDebug) {
+         std::cout << "EXIT : <data_declaration>" << std::endl;
       }
       return rval;
    }
@@ -253,38 +299,57 @@ public:
       return rval;
    }
   
-   void fun_declaration() {
+   // The grammar is written so that the function declaration takes only one statement following the argument list
+   // The use of {} to group statement is made possible because { statement list } is defined as a compound
+   // statement.
+   blr_ast_node *fun_declaration() {
+      blr_ast_node *rval = 0;
+      
+      std::string name;
+      std::vector<blr_ast_node *> paramtypes;
+      blr_ast_node *returntype;
+      blr_ast_node *body;
+      
       if (mVerbose) {
          std::cout << "<fun_declaration>" << std::endl;
       }
       
       if (mState) { mState = match(blr_token_func); }
-      if (mState) { type_specifier(); }
+      if (mState) { returntype = type_specifier(); }
       if (mState) { mState = match(blr_token_name); }
+      name = mLastMatchedValue;
       if (mState) { mState = match(blr_token_leftpar); }
-      if (mState) { params(); }
+      if (mState) { paramtypes = params(); }
       if (mState) { mState = match(blr_token_rightpar); }
       //if (mState) { mState = match(blr_token_leftbrace); }
-      if (mState) { statement(); }
+      if (mState) { body = statement(); }
       //if (mState) { mState = match(blr_token_rightbrace); }
       
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_function_prototype(name, mStructureDepth, paramtypes, returntype, body);
+	 mASTFunctions.push_back(rval);
+      }
 
       if (mVerboseDebug) {
          std::cout << "EXIT: <fun_declaration>" << std::endl;
       }
+      return rval;
    }
    
-   void params() { 
+   std::vector<blr_ast_node *> params() {
+      std::vector<blr_ast_node *> rval;
       if (mVerbose) {
          std::cout << "<params>" << std::endl;
       }
       
+      // We used this seperation between <params> and <param_list> to test for an empty list 
+      // Like this: () 
       if (mState) { 
          if (isnext(blr_token_rightpar)) {} 
-         else { param_list(); }
+         else { rval = param_list(); }
       }
       
       if (!mState) {
@@ -294,15 +359,17 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <params>" << std::endl;
       }
+      return rval;
    }
    
-   void param_list() {      
+   std::vector<blr_ast_node *> param_list() {
+      std::vector<blr_ast_node *> rval;
       if (mVerbose) {
          std::cout << "<param-list>" << std::endl;
       }
       
       do {
-         if (mState) { type_specifier(); }
+         if (mState) { rval.push_back(type_specifier()); }
          if (mState) { mState = match(blr_token_name); }
       } while (mState && match(blr_token_comma));
                
@@ -313,6 +380,7 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <param-list>" << std::endl;
       }
+      return rval;
    }
 
    blr_ast_node *type_specifier() {
@@ -415,7 +483,8 @@ public:
       return rval;
    }
 
-   void expression() {
+   blr_ast_node *expression() {
+      blr_ast_node *rval = 0;
       if (mVerbose) {
          std::cout << "<expression>" << std::endl;
       }
@@ -423,12 +492,14 @@ public:
       // Is it am assignement ?
       if (isnext(blr_token_name) && issecondnext(blr_token_assignment)) {
          if (mState) { mState = match(blr_token_name); }
+	 blr_ast_node *left = new blr_ast_node_expression_variable(mLastMatchedValue);
          if (mState) { mState = match(blr_token_assignment); }
-         if (mState) { expression(); }
+         if (mState) { rval = expression(); }
+	 rval = new blr_ast_node_assignment(left, rval);
       }
       else {
          // Here we take a guess but it really can't be anything else
-         if (mState) { complex_expression(); }
+         if (mState) { rval = complex_expression(); }
       }
    
       if (!mState) {
@@ -438,6 +509,7 @@ public:
       if (mVerboseDebug) {
          std::cout << "EXIT : <expression>" << std::endl;
       }
+      return rval;
    }
 
    blr_ast_node *complex_expression() {
@@ -662,116 +734,160 @@ public:
    }
 
 
-   void statement() {
+   blr_ast_node *statement() {
+      blr_ast_node *rval = 0;
       if (mVerbose) {
          std::cout << "<statement>" << std::endl;
       }
 
       if (mState) {
          if (isnext(blr_token_var)) {
-            if (mState) { data_definition(); }
+            if (mState) { rval = data_definition(); }
          }
          else if (isnext(blr_token_if)) {
-            if (mState) { if_statement(); }
+            if (mState) { rval = if_statement(); }
          }
          else if (isnext(blr_token_break)) {
-            if (mState) { break_statement(); }
+            if (mState) { rval = break_statement(); }
          }
          else if (isnext(blr_token_return)) {
-            if (mState) { return_statement(); }
+            if (mState) { rval = return_statement(); }
          }
          else if (isnext(blr_token_leftbrace)) {
-            if (mState) { compound_statement(); }
+            if (mState) { rval = compound_statement(); }
          }
          else if (isnext(blr_token_while)) {
-            if (mState) { while_statement(); }
+            if (mState) { rval = while_statement(); }
          }
          else if (isnext(blr_token_foreach)) {
-            if (mState) { foreach_statement(); }
+            if (mState) { rval = foreach_statement(); }
          }
          else if (isnext(blr_token_for)) {
-            if (mState) { for_statement(); }
+            if (mState) { rval = for_statement(); }
          }
          else {
             // Try an expression statement
-            if (mState) { expression_statement(); }
+            if (mState) { rval = expression_statement(); }
          }
       }
 
       if (!mState) {
          error();
       }
+      return rval;
    }
 
-   void expression_statement() {
+   blr_ast_node *expression_statement() {
+      blr_ast_node *rval = 0;
       if (mVerbose) {
          std::cout << "<expression_statement>" << std::endl;
       }
 
       while (mState && !match(blr_token_semicolon)) {
-         if (mState) { expression(); }
+         if (mState) { rval = expression(); }
       }
 
       if (!mState) {
          error();
       }
+      return rval;
    }
 
-   void if_statement() {
+   // if
+   blr_ast_node *if_statement() {
+      blr_ast_node *rval = 0;
+      blr_ast_node *condition = 0;
+      blr_ast_node *ifstatement = 0;
+      blr_ast_node *elsestatement = 0;
+      
       if (mVerbose) {
          std::cout << "<if_statement>" << std::endl;
       }
 
       if (mState) { mState = match(blr_token_if); }
       if (mState) { mState = match(blr_token_leftpar); }
-      if (mState) { expression(); }
+      if (mState) { condition = expression(); }
       if (mState) { mState = match(blr_token_rightpar); }
-      if (mState) { statement(); }
+      if (mState) { ifstatement = statement(); }
       if (match(blr_token_else)) {
-         if (mState) { statement(); }
+         if (mState) { elsestatement = statement(); }
       }
 
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_if(condition, ifstatement, elsestatement);
+      }
+      return rval;
    }
+   
+   // for
+   blr_ast_node *for_statement() {
+      blr_ast_node *rval = 0;
 
-   void for_statement() {
+      blr_ast_node *init = 0;
+      blr_ast_node *condition = 0;
+      blr_ast_node *update = 0;
+      blr_ast_node *loopstatement = 0;
+
       if (mVerbose) {
-         std::cout << "<if_statement>" << std::endl;
+         std::cout << "<for_statement>" << std::endl;
       }
 
       if (mState) { mState = match(blr_token_for); }
       if (mState) { mState = match(blr_token_leftpar); }
-      if (mState) { expression(); }
+      if (mState) { init = expression(); }
       if (mState) { mState = match(blr_token_semicolon); }
-      if (mState) { expression(); }
+      if (mState) { condition = expression(); }
       if (mState) { mState = match(blr_token_semicolon); }
-      if (mState) { expression(); }
+      if (mState) { update = statement(); }
       if (mState) { mState = match(blr_token_rightpar); }
-      if (mState) { statement(); }
+      if (mState) { loopstatement = statement(); }
 
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_for(init, condition, update, loopstatement);
+      }
+
+      return rval;
    }
 
-   void while_statement() {
+   // while
+   blr_ast_node *while_statement() {
+      blr_ast_node *rval = 0;
+      blr_ast_node *cond;
+      blr_ast_node *loopstatement;
+      
       if (mVerbose) {
          std::cout << "<while_statement>" << std::endl;
       }
 
       if (mState) { mState = match(blr_token_while); }
       if (mState) { mState = match(blr_token_leftpar); }
-      if (mState) { expression(); }
+      if (mState) { cond = expression(); }
       if (mState) { mState = match(blr_token_rightpar); }
-      if (mState) { statement(); }
+      if (mState) { loopstatement = statement(); }
+      
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_while(cond, loopstatement);
+      }
+      return rval;
    }
 
-   void foreach_statement() {
+   // foreach 
+   blr_ast_node *foreach_statement() {
+      blr_ast_node *rval = 0;
+
+      std::string element = 0;
+      std::string container = 0;
+      blr_ast_node *loopstatement = 0;
+
       if (mVerbose) {
          std::cout << "<foreach_statement>" << std::endl;
       }
@@ -779,15 +895,24 @@ public:
       if (mState) { mState = match(blr_token_foreach); }
       if (mState) { mState = match(blr_token_leftpar); }
       if (mState) { mState = match(blr_token_name); }
+      element = mLastMatchedValue;
       if (mState) { mState = match(blr_token_in); }
       if (mState) { mState = match(blr_token_name); }
-      if (mState) { statement(); }
+      container = mLastMatchedValue;
+      if (mState) { loopstatement = statement(); }
+
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_foreach(element, container, loopstatement);
+      }
+      return rval;
    }
 
-   void break_statement() {
+   // break
+   blr_ast_node *break_statement() {
+      blr_ast_node *rval;
       if (mVerbose) {
          std::cout << "<break_statement>" << std::endl;
       }
@@ -798,9 +923,16 @@ public:
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_break(); 
+      }
+      
+      return rval;
    }
 
-   void return_statement() {
+   // return
+   blr_ast_node *return_statement() {
+      blr_ast_node *rval;
 
       if (mVerbose) {
          std::cout << "<return_statement>" << std::endl;
@@ -808,16 +940,32 @@ public:
 
       if (mState) { mState = match(blr_token_return); }
       if (!isnext(blr_token_semicolon)) {
-         expression();
+         rval = expression();
       }
       if (mState) { mState = match(blr_token_semicolon); }
       
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_return(rval);
+      }
+      
+      return rval;
    }
 
-   void compound_statement() {
+   // List of statement in between 2 braces 
+   // like 
+   // {
+   //   statement 1
+   //   statement 2
+   //   ...
+   //   statement n
+   // }
+
+   blr_ast_node *compound_statement() {
+      blr_ast_node *rval = 0;
+      std::vector<blr_ast_node *> statementlist;
       if (mVerbose) {
          std::cout << "<compound_statement>" << std::endl;
       }
@@ -826,7 +974,7 @@ public:
       if (mState) { mState = match(blr_token_leftbrace); } 
       
       while (mState && !isnext(blr_token_rightbrace)) {
-         statement();
+         statementlist.push_back(statement());
       }
       
       // Close Brace }
@@ -835,7 +983,16 @@ public:
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_statement_compound(statementlist);
+      }
+      
+      return rval;
    }
+
+   // ------------------------------------------------------------------------------------
+   // Below functions are parser helper functions
+   // ------------------------------------------------------------------------------------
 
    bool isnext(BLR_TOKEN_TYPE tt) {
       //std::cout << "IS In   : " << (*mpTokenTypeNames)[tt] << std::endl;
@@ -965,17 +1122,17 @@ public:
             std::cout << p->mName << std::endl;
          }
       }
-      // We have a struct
+      // We have an array
       else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(x)) {
          std::cout << "Array of ";
          output_type_name(p->mOf);
       }
-      // We have a struct
+      // We have a list
       else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(x)) {
          std::cout << "List of ";
          output_type_name(p->mOf);
       }
-      // We have a struct
+      // We have a member function
       else  {
          std::cout << "Func" << std::endl;
       }
@@ -1006,6 +1163,17 @@ public:
       std::cout << "}" << std::endl;
    }
 
+   void output_function(blr_ast_node *x) {
+      if (blr_ast_node_function_prototype *p = dynamic_cast<blr_ast_node_function_prototype *>(x)) {
+	 std::cout << "func ";
+	 for (auto &s: p->mMemberOf) {
+	    std::cout << s << "::";
+	 }
+	 std::cout << p->mName;
+	 std::cout << std::endl;
+      }
+   }
+
    void output_all_types() {
       std::cout << "----------------------------------------------------------------" << std::endl;
       std::cout << "Output " << mASTTypes.size() << " type(s)" << std::endl;
@@ -1024,6 +1192,14 @@ public:
       std::cout << std::endl;
    }
 
+   void output_all_functions() {
+      std::cout << "----------------------------------------------------------------" << std::endl;
+      std::cout << "Output " << mASTFunctions.size() << " function(s)" << std::endl;
+      for (auto &x: mASTFunctions) {
+         output_function(x);
+      }
+      std::cout << std::endl;
+   }
 
 private:
 
@@ -1041,8 +1217,14 @@ private:
    std::list<std::shared_ptr<blr_token>>           *mpTokenList;
    std::map<BLR_TOKEN_TYPE, std::string>           *mpTokenTypeNames;
 
+   // Keep the last matched Value
    std::string mLastMatchedValue;
+
+   // Keep the last matched Type when the token is a type 
    BLR_TOKEN_TYPE mLastMatchedTokenType;
+
+   // Keep track of the nested structures  
+   std::vector<std::string>  mStructureDepth;
 
    // Current look-ahead symbol
    std::list<std::shared_ptr<blr_token>>::iterator mLookAheadSymbol;
@@ -1062,6 +1244,10 @@ private:
 
    // Structs (AST Trees)
    std::list<blr_ast_node *> mASTStructs;
+
+   // Functions (AST Trees)
+   std::list<blr_ast_node *> mASTFunctions;
+
 };
 
 #endif
