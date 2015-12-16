@@ -82,6 +82,6 @@ struct blr_token {
    unsigned int     mCharacterOnLine;
 };
 
-
+void output_token(BLR_TOKEN_TYPE token);
 
 #endif

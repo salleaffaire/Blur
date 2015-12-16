@@ -489,13 +489,13 @@ public:
          std::cout << "<expression>" << std::endl;
       }
       
-      // Is it am assignement ?
+      // Is it an assignement ?
       if (isnext(blr_token_name) && issecondnext(blr_token_assignment)) {
          if (mState) { mState = match(blr_token_name); }
 	 blr_ast_node *left = new blr_ast_node_expression_variable(mLastMatchedValue);
          if (mState) { mState = match(blr_token_assignment); }
          if (mState) { rval = expression(); }
-	 rval = new blr_ast_node_assignment(left, rval);
+	 rval = new blr_ast_node_expression_assignment(left, rval);
       }
       else {
          // Here we take a guess but it really can't be anything else
@@ -1172,6 +1172,63 @@ public:
 	 std::cout << p->mName;
 	 std::cout << std::endl;
       }
+   }
+
+   void output_expression(blr_ast_node *x) {
+      std::cout << "E( ";
+      if (blr_ast_node_expression_number *p = dynamic_cast<blr_ast_node_expression_number *>(x)) {
+	 std::cout << "N:" << (int)p->mValue << " ";
+      }
+      else if (blr_ast_node_expression_literal *p = dynamic_cast<blr_ast_node_expression_literal *>(x)) {
+	 std::cout << "L:" << p->mValue << " ";
+      }
+      else if (blr_ast_node_expression_boolean *p = dynamic_cast<blr_ast_node_expression_boolean *>(x)) {
+	 std::cout << "B:";
+	 if (p->mValue == true) {
+	    std::cout << "TRUE";
+	 }
+	 else {
+	    std::cout << "FALSE";
+	 }
+	 std::cout << " ";
+      }   
+      else if (blr_ast_node_expression_variable *p = dynamic_cast<blr_ast_node_expression_variable *>(x)) {
+	 std::cout << "V:" << p->mValue << " ";	 
+      }
+      else if (blr_ast_node_expression_call *p = dynamic_cast<blr_ast_node_expression_call *>(x)) {
+	 std::cout << "C:" << p->mCallee << "(";
+	 for (auto &x: p->mArgs) {
+	    output_expression(x);
+	    std::cout << " || ";
+	 }
+	 std::cout << ")" << std::endl;
+      }
+      else if (blr_ast_node_expression_defered_call *p = dynamic_cast<blr_ast_node_expression_defered_call *>(x)) {
+	 // This should find the expression call if branch 
+	 output_expression(p->mCall);
+      }
+      else if (blr_ast_node_expression_binary_op *p = dynamic_cast<blr_ast_node_expression_binary_op *>(x)) {
+	 output_expression(p->mLeftExp);
+	 std::cout << " ";
+	 output_token(p->mOp);
+	 std::cout << " ";
+	 output_expression(p->mRightExp);
+      }
+      else if (blr_ast_node_expression_unary_op *p = dynamic_cast<blr_ast_node_expression_unary_op *>(x)) {
+	 output_token(p->mOp);
+	 std::cout << " ";
+	 output_expression(p->mExp);
+      }
+      else if (blr_ast_node_expression_assignment *p = dynamic_cast<blr_ast_node_expression_assignment *>(x)) {
+	 output_expression(p->mLeft);
+	 std::cout << " = ";
+	 output_expression(p->mRight);
+      }
+      std::cout << " )E ";
+   }
+
+   void output_statement(blr_ast_node *x) {
+      
    }
 
    void output_all_types() {

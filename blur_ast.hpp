@@ -111,16 +111,16 @@ public:
       mOp(op), mExp(e) {}
 };
 
-class blr_ast_node_assignment : public blr_ast_node {
+class blr_ast_node_expression_assignment : public blr_ast_node {
 public:
-   virtual ~blr_ast_node_assignment() {
+   virtual ~blr_ast_node_expression_assignment() {
       delete mLeft;
       delete mRight;
    }
    blr_ast_node  *mLeft;
    blr_ast_node  *mRight;
-   blr_ast_node_assignment(blr_ast_node *left,
-			   blr_ast_node *right) : 
+   blr_ast_node_expression_assignment(blr_ast_node *left,
+				      blr_ast_node *right) : 
       mLeft(left), mRight(right) {}
 };
 
