@@ -94,7 +94,9 @@ public:
 
       mTokenTypeNames[blr_token_list]          = "List";
       mTokenTypeNames[blr_token_bit]           = "Bit";
-      mTokenTypeNames[blr_token_bit]           = "Byte";
+      mTokenTypeNames[blr_token_byte]          = "Byte";
+      mTokenTypeNames[blr_token_byte]          = "Int32";
+      mTokenTypeNames[blr_token_byte]          = "Int64";
       mTokenTypeNames[blr_token_void]          = "Void";
 
       // Operators
@@ -144,16 +146,18 @@ public:
       mReservedWords["var"]     = blr_token_var;
       mReservedWords["while"]   = blr_token_while;
       mReservedWords["break"]   = blr_token_break;
-      mReservedWords["if"]      = blr_token_if;     
+      mReservedWords["if"]      = blr_token_if;
       mReservedWords["else"]    = blr_token_else;     
       mReservedWords["for"]     = blr_token_for;     
-      mReservedWords["foreach"] = blr_token_foreach;     
+      mReservedWords["foreach"] = blr_token_foreach;
       mReservedWords["struct"]  = blr_token_struct;
       mReservedWords["in"]      = blr_token_in;
       mReservedWords["using"]   = blr_token_using;      
       mReservedWords["sizeof"]  = blr_token_sizeof;
       mReservedWords["bit"]     = blr_token_bit;
       mReservedWords["byte"]    = blr_token_byte;
+      mReservedWords["int32"]   = blr_token_int32;
+      mReservedWords["int64"]   = blr_token_int64;
       mReservedWords["list"]    = blr_token_list;
       mReservedWords["void"]    = blr_token_void;
       mReservedWords["return"]  = blr_token_return;

@@ -58,6 +58,8 @@ int main(int argc, char *argv[]) {
       blr_parser parser;
       parser.init(lexer.get_token_list_pointer(),
                   lexer.get_token_type_names());  
+
+
       // Call the top level production
       parser.program();
 
@@ -69,7 +71,13 @@ int main(int argc, char *argv[]) {
 
       // Output all Functions
       parser.output_all_functions();
-      
+
+      if (true == parser.get_state()) {
+	 std::cout << "Compilation completed without errors." << std::endl << std::endl;
+      }
+      else {
+	 std::cout << "PARSING ERRORS." << std::endl << std::endl;
+      }
    }
 #endif
      

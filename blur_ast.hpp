@@ -124,6 +124,19 @@ public:
       mLeft(left), mRight(right) {}
 };
 
+class blr_ast_node_expression_complex : public blr_ast_node {
+public:
+   virtual ~blr_ast_node_expression_complex() {
+      for (auto &x: mExpressionList) {
+	 delete x;
+      }
+   } 
+   std::vector<blr_ast_node *> mExpressionList;
+   
+   blr_ast_node_expression_complex(std::vector<blr_ast_node *> explist) : 
+      mExpressionList(explist) {}
+};
+
 // Type declaration
 // ---------------------------------------------------------------------------------
 class blr_ast_node_struct: public blr_ast_node {

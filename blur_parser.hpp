@@ -514,30 +514,46 @@ public:
 
    blr_ast_node *complex_expression() {
       blr_ast_node *rval;
-      std::string callee;
+
+      std::vector<blr_ast_node *> explist;
 
       if (mVerbose) {
          std::cout << "<complex_expression>" << std::endl;
-      } 
+      }
 
+      // The result of this expression is used as the context and is the *this* object
       if (mState) { rval = simple_expression(); }
-      while (mState && match(blr_token_dot)) {
-         if (match(blr_token_rightarrow)) {	   
-            defered_call();
+      explist.push_back(rval);
+      
+      // Calling a member function on the *this* object 
+      while (mState && (isnext(blr_token_dot) || (isnext(blr_token_leftbracket)))) {
+         // Is it an array access
+	 if (isnext(blr_token_leftbracket)) {
+	    rval = array_access();
+	 }
+	 // Is it a call
+	 else if (match(blr_token_dot)) {
+	    if (match(blr_token_rightarrow)) {
+	       rval = defered_call();
+	    }
+	    else {
+	       rval = call();
+	    }
          }
-         else {
-            call();
-         }
+	 explist.push_back(rval);
       }
 
       if (!mState) {
          error();
       }
+      else {
+	 rval = new blr_ast_node_expression_complex(explist);
+      }
 
       if (mVerboseDebug) {
          std::cout << "EXIT : <complex_expression>" << std::endl;
       }
-      return rval; 
+      return rval;
    }
 
    blr_ast_node *simple_expression() {
@@ -690,6 +706,27 @@ public:
       }
       else {
 	 rval = new blr_ast_node_expression_call(name, a);
+      }
+      return rval;
+   }
+
+   blr_ast_node *array_access() {
+      blr_ast_node *rval = 0;
+
+      std::vector<blr_ast_node *> a;
+      if (mVerbose) {
+         std::cout << "<array_access>" << std::endl;
+      }
+
+      if (mState) { mState = match(blr_token_leftbracket); }
+      if (mState) { a = args(); }
+      if (mState) { mState = match(blr_token_rightbracket); }      
+      
+      if (!mState) {
+         error();
+      }
+      else {
+	 rval = new blr_ast_node_expression_call("_@_ARRAY__", a);
       }
       return rval;
    }
@@ -1091,6 +1128,9 @@ public:
          mReported = true;
       } 
    }
+
+   // Output function for debugging purposes
+   // --------------------------------------------------------------------------------------------------
    
    void output_type_name(blr_ast_node *x) {
       // We have a struct
@@ -1104,22 +1144,22 @@ public:
       // We have a base type
       else if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
          if (p->mType == blr_type_bool) {
-            std::cout << "bool" << std::endl;
+            std::cout << "bool";
          }
          else if (p->mType == blr_type_string) {
-            std::cout << "string" << std::endl;
+            std::cout << "string";
          }
          else if (p->mType == blr_type_bit) {
-            std::cout << "bit" << std::endl;
+            std::cout << "bit";
          }         
          else if (p->mType == blr_type_byte) {
-            std::cout << "byte" << std::endl;
+            std::cout << "byte";
          }
          else if (p->mType == blr_type_void) {
-            std::cout << "void" << std::endl;
+            std::cout << "void";
          }
          else if (p->mType == blr_type_dectype) {
-            std::cout << p->mName << std::endl;
+            std::cout << p->mName;
          }
       }
       // We have an array
@@ -1134,7 +1174,7 @@ public:
       }
       // We have a member function
       else  {
-         std::cout << "Func" << std::endl;
+         std::cout << "Func";
       }
    }
 
@@ -1151,6 +1191,7 @@ public:
                   dynamic_cast<blr_ast_node_variable_definition *>(y)) {
             std::cout << "var " << p->mName << " -> ";
             output_type_name(p->mType);
+	    std::cout << std::endl;
             if (p->mCond) {
                // Output condition
             }
@@ -1165,17 +1206,44 @@ public:
 
    void output_function(blr_ast_node *x) {
       if (blr_ast_node_function_prototype *p = dynamic_cast<blr_ast_node_function_prototype *>(x)) {
+	 
 	 std::cout << "func ";
+	 
+	 // Output function name - first construct it's mangled name
 	 for (auto &s: p->mMemberOf) {
 	    std::cout << s << "::";
 	 }
 	 std::cout << p->mName;
+	 
+	 // Output the list of paramater types
+	 std::cout << " " << p->mParamTypes.size() << " par.s ";
+	 if (p->mParamTypes.size() == 0) {
+	    std::cout << " ( ) ";
+	 }
+	 else {
+	    std::cout << " ( "; 
+	    for (int i=0;i<(int)(p->mParamTypes.size())-2;++i) {
+	       output_type_name(p->mParamTypes[i]);
+	       std::cout << ", ";
+	    }
+	    output_type_name(p->mParamTypes[p->mParamTypes.size()-1]);
+	    std::cout << " ) ";
+	 }
+
+	 // Output return value
+	 std::cout << " -> ";
+	 output_type_name(p->mReturnType); 
+	 std::cout << std::endl;	 
+	    
+	 // Output functions statement
+	 output_statement(p->mStatement);	 
+
 	 std::cout << std::endl;
       }
    }
 
    void output_expression(blr_ast_node *x) {
-      std::cout << "E( ";
+      //std::cout << "E( ";
       if (blr_ast_node_expression_number *p = dynamic_cast<blr_ast_node_expression_number *>(x)) {
 	 std::cout << "N:" << (int)p->mValue << " ";
       }
@@ -1201,7 +1269,7 @@ public:
 	    output_expression(x);
 	    std::cout << " || ";
 	 }
-	 std::cout << ")" << std::endl;
+	 std::cout << ")";
       }
       else if (blr_ast_node_expression_defered_call *p = dynamic_cast<blr_ast_node_expression_defered_call *>(x)) {
 	 // This should find the expression call if branch 
@@ -1224,11 +1292,78 @@ public:
 	 std::cout << " = ";
 	 output_expression(p->mRight);
       }
-      std::cout << " )E ";
+      else if (blr_ast_node_expression_complex *p = dynamic_cast<blr_ast_node_expression_complex *>(x)) {
+	 std::cout << "CE( ";
+	 for (auto &x: p->mExpressionList) {
+	    output_expression(x);
+	 }
+	 std::cout << " )CE";
+      }
+      else {
+	 std::cout << " !NOT AN EXPRESSION! ";
+      }
+      //std::cout << " )E ";
    }
 
    void output_statement(blr_ast_node *x) {
-      
+      if (blr_ast_node_statement_if *p = dynamic_cast<blr_ast_node_statement_if *>(x)) {
+	 std::cout << "IF ( ";
+	 output_expression(p->mCondition);
+	 std::cout << " ) { ";
+	 output_statement(p->mIfStatement);
+	 std::cout << " } ELSE { ";
+	 output_statement(p->mElseStatement);
+	 std::cout << " } ";
+	 std::cout << std::endl;
+      }
+      else if (blr_ast_node_statement_while *p = dynamic_cast<blr_ast_node_statement_while *>(x)) {
+	 std::cout << "WHILE ( ";
+	 output_expression(p->mCondition);
+	 std::cout << " ) { ";
+	 output_statement(p->mLoopStatement);
+	 std::cout << " } ";	 
+	 std::cout << std::endl;
+      }
+      else if (blr_ast_node_statement_for *p = dynamic_cast<blr_ast_node_statement_for *>(x)) {
+	 std::cout << "FOR ( ";
+	 output_expression(p->mInit);
+	 std::cout << " ; ";
+	 output_expression(p->mCondition);
+	 std::cout << " ; ";
+	 output_statement(p->mUpdate);
+	 std::cout << " ) { ";
+	 output_statement(p->mLoopStatement);
+	 std::cout << " } ";
+      }
+      else if (blr_ast_node_statement_foreach *p = dynamic_cast<blr_ast_node_statement_foreach *>(x)) {
+	 std::cout << "FOREACH ( ";
+	 std::cout << p->mElement << " in ";
+	 std::cout << p->mContainer << " ) { ";
+	 output_expression(p->mLoopStatement);
+	 std::cout << " } ";
+      }
+      else if (blr_ast_node_statement_break *p = dynamic_cast<blr_ast_node_statement_break *>(x)) {
+	 std::cout << "BREAK" << std::endl;
+      }
+      else if (blr_ast_node_statement_return *p = dynamic_cast<blr_ast_node_statement_return *>(x)) {
+	 std::cout << "RETURN ";
+	 output_expression(p->mRval);
+      }
+      else if (blr_ast_node_statement_compound *p = dynamic_cast<blr_ast_node_statement_compound *>(x)) {
+	 std::cout << " { " << std::endl;
+	 for (auto &x: p->mStatementList) {
+	    output_statement(x);
+	    std::cout << std::endl;
+	 }
+	 std::cout << " } ";
+      }
+      else if (blr_ast_node_variable_definition *p = dynamic_cast<blr_ast_node_variable_definition *>(x)) {
+	 std::cout << "DATA DEFINITION" << std::endl;
+      }
+      // If it didn't match anything it must have been an expression statement 
+      else {
+	 output_expression(x);
+      }
    }
 
    void output_all_types() {
@@ -1236,8 +1371,9 @@ public:
       std::cout << "Output " << mASTTypes.size() << " type(s)" << std::endl;
       for (auto &x: mASTTypes) {
          output_type_name(x);
+	 std::cout << std::endl;
       }
-      std::cout << std::endl;
+      std::cout << std::endl << std::endl;;
    } 
 
    void output_all_structs() {
@@ -1245,8 +1381,9 @@ public:
       std::cout << "Output " << mASTStructs.size() << " struct(s)" << std::endl;
       for (auto &x: mASTStructs) {
          output_struct(x);
+	 std::cout << std::endl;
       }
-      std::cout << std::endl;
+      std::cout << std::endl << std::endl;
    }
 
    void output_all_functions() {
@@ -1254,10 +1391,17 @@ public:
       std::cout << "Output " << mASTFunctions.size() << " function(s)" << std::endl;
       for (auto &x: mASTFunctions) {
          output_function(x);
+	 std::cout << std::endl;
       }
-      std::cout << std::endl;
+      std::cout << std::endl << std::endl;
    }
 
+   // Access Functions
+   // ----------------------------------------------------------------------
+   bool get_state() {
+      return mState;
+   }
+   
 private:
 
    bool mVerbose;

@@ -21,13 +21,13 @@ func void bar() {
       for (x=0;x<4;{x=x-1;}) {
          x = x;
       }
-   }  
+   }
 }
 
 // Some more comments
 func void main() {
    var foo x;
 
-   x.->aplus(10);
+   print(x.->aplus(10)[10])[10][10].status();
    ->bar();
 }
