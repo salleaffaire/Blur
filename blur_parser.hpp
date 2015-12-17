@@ -67,9 +67,8 @@ public:
 
       mpTokenTypeNames = ttn;
                                                 
-      // Calculate FIRST and FOLLOW
-      // ------------------------------------------------------
-      // 
+      // Push native type names 
+      
       
    }
 
@@ -208,9 +207,22 @@ public:
          error();
       }
       else {
-         rval = new blr_ast_node_struct(name, std::move(decdefs));
+         rval = new blr_ast_node_struct(name, std::move(decdefs));	 
+  
+	 // Add the structure's AST node to the parser's list
          mASTStructs.push_back(rval);
+
+	 //
 	 mStructureDepth.pop_back();
+
+	 // Add the new name to the declared type list
+	 std::string fullname = "";
+	 for (auto &x: mStructureDepth) {
+	    fullname += x;
+	    fullname += "::";
+	 }
+	 fullname += name;
+	 mDeclaredTypeList.push_back(fullname);
       }
 
       if (mVerboseDebug) {
@@ -408,6 +420,11 @@ public:
       }
       --mTypeSpecifierLevel;
       if (0 == mTypeSpecifierLevel) {
+	 // Build Type Specifier internal mangled name
+	 std::string tsname;
+	 type_specifier_name(rval, tsname);
+	 
+	 //
          mASTTypes.push_back(rval);
       }
       return rval;
@@ -457,6 +474,12 @@ public:
          }
          else if (mState = match(blr_token_byte)) {
             rval = new blr_ast_node_base_type("byte", blr_type_byte);
+         }
+         else if (mState = match(blr_token_byte)) {
+            rval = new blr_ast_node_base_type("int32", blr_type_int32);
+         }
+         else if (mState = match(blr_token_byte)) {
+            rval = new blr_ast_node_base_type("int64", blr_type_int64);
          }
          else if (mState = match(blr_token_list)) {
             blr_ast_node *list_type;
@@ -1027,6 +1050,60 @@ public:
       return rval;
    }
 
+   void type_specifier_name(blr_ast_node *x, std::string &tsname) {
+      if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
+         if (p->mType == blr_type_bool) {
+            tsname += "bol";
+         }
+         else if (p->mType == blr_type_string) {
+            tsname += "str";
+         }
+         else if (p->mType == blr_type_bit) {
+            tsname += "bit";
+         }         
+         else if (p->mType == blr_type_byte) {
+            tsname += "byt";
+         }
+         else if (p->mType == blr_type_int32) {
+            tsname += "i32";
+         }
+         else if (p->mType == blr_type_int64) {
+            tsname += "i64";
+         }
+         else if (p->mType == blr_type_void) {
+            tsname += "vod";
+         }
+         else if (p->mType == blr_type_dectype) {
+	    if (type_exists(p->mName)) {
+	       tsname += p->mName;
+	    }
+	    else {
+	       std::cout << p->mName << " does not exists" << std::endl; 
+	       mState = false;
+	    }
+         }
+      }
+      // We have an array
+      else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(x)) {
+         
+      }
+      // We have a list
+      else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(x)) {
+
+      }
+   }
+   
+   bool type_exists(std::string tsname) {
+      bool rval = false;
+
+      if (std::find(mDeclaredTypeList.begin(), mDeclaredTypeList.end(), tsname) != mDeclaredTypeList.end()) {
+	 rval = true;
+      }
+
+      return rval;
+   }
+   
+
    // ------------------------------------------------------------------------------------
    // Below functions are parser helper functions
    // ------------------------------------------------------------------------------------
@@ -1133,16 +1210,7 @@ public:
    // --------------------------------------------------------------------------------------------------
    
    void output_type_name(blr_ast_node *x) {
-      // We have a struct
-      if (blr_ast_node_struct *p = dynamic_cast<blr_ast_node_struct *>(x)) {
-         std::cout << "Struct { " << std::endl;
-         for (auto &x: p->mDecDefs) {
-            output_type_name(x);
-         }
-         std::cout << "}" << std::cout;
-      }
-      // We have a base type
-      else if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
+      if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
          if (p->mType == blr_type_bool) {
             std::cout << "bool";
          }
@@ -1154,6 +1222,12 @@ public:
          }         
          else if (p->mType == blr_type_byte) {
             std::cout << "byte";
+         }
+         else if (p->mType == blr_type_int32) {
+            std::cout << "int32";
+         }
+         else if (p->mType == blr_type_int64) {
+            std::cout << "int64";
          }
          else if (p->mType == blr_type_void) {
             std::cout << "void";
@@ -1171,10 +1245,6 @@ public:
       else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(x)) {
          std::cout << "List of ";
          output_type_name(p->mOf);
-      }
-      // We have a member function
-      else  {
-         std::cout << "Func";
       }
    }
 
@@ -1196,7 +1266,7 @@ public:
                // Output condition
             }
          }
-         // We have a struct
+         // We have a mamber func
          else  {
             std::cout << "func" << std::endl;
          }
@@ -1396,6 +1466,15 @@ public:
       std::cout << std::endl << std::endl;
    }
 
+   void output_all_declaredtypenames() {
+      std::cout << "----------------------------------------------------------------" << std::endl;
+      std::cout << "Output " << mDeclaredTypeList.size() << " declared type names" << std::endl;
+      for (auto &x: mDeclaredTypeList) {
+	 std::cout << x << std::endl << std::endl;
+      }
+      std::cout << std::endl << std::endl;      
+   }
+
    // Access Functions
    // ----------------------------------------------------------------------
    bool get_state() {
@@ -1430,12 +1509,6 @@ private:
    // Current look-ahead symbol
    std::list<std::shared_ptr<blr_token>>::iterator mLookAheadSymbol;
 
-   // FIRST
-   std::map<BLR_RULE, std::list<blr_token>> mFirst;
-
-   // FOLLOW
-   std::map<BLR_RULE, std::list<blr_token>> mFollow;
-
    // AST TREE
    blr_ast_node *mASTRoot;
 
@@ -1449,6 +1522,8 @@ private:
    // Functions (AST Trees)
    std::list<blr_ast_node *> mASTFunctions;
 
+   // Type Names
+   std::list<std::string> mDeclaredTypeList;
 };
 
 #endif

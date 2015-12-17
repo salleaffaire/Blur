@@ -15,6 +15,8 @@ enum BLR_TYPE {
    blr_type_string,
    blr_type_bit,
    blr_type_byte,
+   blr_type_int32,
+   blr_type_int64,
    blr_type_void,
    blr_type_dectype
 };

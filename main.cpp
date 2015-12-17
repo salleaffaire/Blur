@@ -72,6 +72,9 @@ int main(int argc, char *argv[]) {
       // Output all Functions
       parser.output_all_functions();
 
+      // Output declared types names
+      parser.output_all_declaredtypenames();
+
       if (true == parser.get_state()) {
 	 std::cout << "Compilation completed without errors." << std::endl << std::endl;
       }
