@@ -25,7 +25,6 @@ public:
 
 class blr_core_structure_function {
 public:
-   std::string  mName;
 };
 
 class blr_core_structure : public blr_type {
@@ -37,6 +36,9 @@ public:
       for (auto &x: mVariableMap) {
 	 delete x.second;
       }
+      for (auto &x: mFunctionMap) {
+	 delete x.second;
+      }   
    }
    
    // Add a variable to the structure - this function is called from add_structure
@@ -44,9 +46,15 @@ public:
    void add_variable(std::string name, blr_core_structure_variable *var) {
       mVariableMap[name] = var;
    }
+   void add_function(std::string name, blr_core_structure_function *fun) {
+      mFunctionMap[name] = fun;
+   }
 
    // Variable Map <Variable Name -> Structure Variable>
    std::map<std::string, blr_core_structure_variable *> mVariableMap;
+
+   // Function Map <Variable Name -> Structure Variable>
+   std::map<std::string, blr_core_structure_function *> mFunctionMap;
    
 };
 
@@ -92,7 +100,8 @@ public:
 	    }
 	    // We have a member function
 	    else if (blr_ast_node_function_prototype *y = dynamic_cast<blr_ast_node_function_prototype *>(x)) {
-
+	       std::cout << "FOUND FUNCTION!!!! " << std::endl;
+	       bcs->add_function(y->mName, new blr_core_structure_function);
 	    }
 	 }
       }
@@ -131,6 +140,9 @@ public:
 	 std::cout << std::endl;
 	 for (auto &y: (x.second)->mVariableMap) {
 	    std::cout << " Variable : " << y.first << " of type " << (y.second)->mType << std::endl; 	    
+	 }
+	 for (auto &y: (x.second)->mFunctionMap) {
+	    std::cout << " Function : " << y.first; 	    
 	 }
 	 std::cout << std::endl;
       }

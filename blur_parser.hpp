@@ -149,7 +149,7 @@ public:
          rval = data_definition();
       }
       else if (isnext(blr_token_func)) {
-         fun_declaration();
+         rval = fun_declaration();
       }
       else {
          mState = false;
@@ -1234,7 +1234,8 @@ public:
             }
          }
          // We have a mamber func
-         else  {
+         else if (blr_ast_node_function_prototype *p = 
+                  dynamic_cast<blr_ast_node_function_prototype *>(y)) {
             std::cout << "func" << std::endl;
          }
       }
