@@ -95,7 +95,7 @@ public:
    }
    BLR_TOKEN_TYPE mOp;
    blr_ast_node  *mLeftExp;
-   blr_ast_node  *mRightExp;;
+   blr_ast_node  *mRightExp;
    blr_ast_node_expression_binary_op(BLR_TOKEN_TYPE op,
                                      blr_ast_node *l, blr_ast_node *r) : 
       mOp(op), mLeftExp(l), mRightExp(r) {}
@@ -241,7 +241,7 @@ public:
    
 };
 
-// Function DeclarationStatements 
+// Statements 
 // --------------------------------------------------------------------------------- 
 class blr_ast_node_statement : public blr_ast_node {
 public:

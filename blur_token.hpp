@@ -26,6 +26,7 @@ enum BLR_TOKEN_TYPE {
    blr_token_int64,
    blr_token_list,
    blr_token_void,
+   blr_token_bool,
    blr_token_sizeof,
    blr_token_in,
    blr_token_using,

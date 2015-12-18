@@ -5,6 +5,7 @@
 
 #include "blur_lexer.hpp"
 #include "blur_parser.hpp"
+#include "blur_core.hpp"
 
 // Simple command line parser
 // -------------------------------------------------------------------------------
@@ -47,6 +48,9 @@ int main(int argc, char *argv[]) {
    char * filename = getCmdOption(argv, argv + argc, "-f");
    
    if (filename) {
+      // Blur Core 
+      blr_core core;
+
       // Test Blurred Lexer
       std::cout << "Compiling : " << filename << std::endl;
       blr_lexer lexer(filename);
@@ -63,6 +67,8 @@ int main(int argc, char *argv[]) {
       // Call the top level production
       parser.program();
 
+      // TEST Parser
+      // --------------------------------------------------------------
       // Output all types
       parser.output_all_types();
 
@@ -74,6 +80,24 @@ int main(int argc, char *argv[]) {
 
       // Output declared types names
       parser.output_all_declaredtypenames();
+
+      // Core Processing
+      // --------------------------------------------------------------
+      // Building core declared structures
+      for (auto &x: *(parser.get_struct_ast_list())) {
+	 core.add_structure(x);
+      }
+
+      // TEST Core State
+      // --------------------------------------------------------------
+      std::cout << "CORE OUTPUT" << std::endl;
+      std::cout << "----------------------------------------------" << std::endl;
+      std::cout << "----------------------------------------------" << std::endl;
+
+      
+
+      core.output_structures();
+      
 
       if (true == parser.get_state()) {
 	 std::cout << "Compilation completed without errors." << std::endl << std::endl;

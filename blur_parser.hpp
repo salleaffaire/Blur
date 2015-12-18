@@ -55,8 +55,8 @@ enum BLR_RULE {
 class blr_parser {
 public:
    blr_parser() : mVerbose(true), mReported(false), mVerboseDebug(false), mState(true),
-                  mTypeSpecifierLevel(0),
-                  mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
+		  mTypeSpecifierLevel(0),
+		  mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
 
    ~blr_parser() {}
 
@@ -194,7 +194,7 @@ public:
       if (mState) { mState = match(blr_token_leftbrace); }
       if (mState) { 
          do {
-            if (mState) { 
+            if (mState) {
                rval = decdef_struct();
                if (mState) { decdefs.push_back(rval); }
             }
@@ -207,21 +207,25 @@ public:
          error();
       }
       else {
-         rval = new blr_ast_node_struct(name, std::move(decdefs));	 
-  
-	 // Add the structure's AST node to the parser's list
-         mASTStructs.push_back(rval);
-
-	 //
+	 // Pop the structure from the depth list
 	 mStructureDepth.pop_back();
 
-	 // Add the new name to the declared type list
+	 // Create the full function name
 	 std::string fullname = "";
+	 
 	 for (auto &x: mStructureDepth) {
 	    fullname += x;
 	    fullname += "::";
 	 }
-	 fullname += name;
+	 
+	 fullname += name; 	 
+
+         rval = new blr_ast_node_struct(fullname, std::move(decdefs));	 
+  
+	 // Add the structure's AST node to the parser's list
+         mASTStructs.push_back(rval);
+
+	 // Add the new name to the declared type list
 	 mDeclaredTypeList.push_back(fullname);
       }
 
@@ -341,7 +345,16 @@ public:
          error();
       }
       else {
-	 rval = new blr_ast_node_function_prototype(name, mStructureDepth, paramtypes, returntype, body);
+	 // Create the full function name
+	 std::string fullname = "";
+	 
+	 for (auto &x: mStructureDepth) {
+	    fullname += x;
+	    fullname += "::";
+	 }
+	 
+	 fullname += name; 
+	 rval = new blr_ast_node_function_prototype(fullname, mStructureDepth, paramtypes, returntype, body);
 	 mASTFunctions.push_back(rval);
       }
 
@@ -413,18 +426,14 @@ public:
       
       if (!mState) {
          error();
-      }     
+      }
  
       if (mVerboseDebug) {
          std::cout << "<EXIT : type_specifier>" << std::endl;
       }
       --mTypeSpecifierLevel;
+
       if (0 == mTypeSpecifierLevel) {
-	 // Build Type Specifier internal mangled name
-	 std::string tsname;
-	 type_specifier_name(rval, tsname);
-	 
-	 //
          mASTTypes.push_back(rval);
       }
       return rval;
@@ -1050,48 +1059,6 @@ public:
       return rval;
    }
 
-   void type_specifier_name(blr_ast_node *x, std::string &tsname) {
-      if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
-         if (p->mType == blr_type_bool) {
-            tsname += "bol";
-         }
-         else if (p->mType == blr_type_string) {
-            tsname += "str";
-         }
-         else if (p->mType == blr_type_bit) {
-            tsname += "bit";
-         }         
-         else if (p->mType == blr_type_byte) {
-            tsname += "byt";
-         }
-         else if (p->mType == blr_type_int32) {
-            tsname += "i32";
-         }
-         else if (p->mType == blr_type_int64) {
-            tsname += "i64";
-         }
-         else if (p->mType == blr_type_void) {
-            tsname += "vod";
-         }
-         else if (p->mType == blr_type_dectype) {
-	    if (type_exists(p->mName)) {
-	       tsname += p->mName;
-	    }
-	    else {
-	       std::cout << p->mName << " does not exists" << std::endl; 
-	       mState = false;
-	    }
-         }
-      }
-      // We have an array
-      else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(x)) {
-         
-      }
-      // We have a list
-      else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(x)) {
-
-      }
-   }
    
    bool type_exists(std::string tsname) {
       bool rval = false;
@@ -1479,6 +1446,10 @@ public:
    // ----------------------------------------------------------------------
    bool get_state() {
       return mState;
+   }
+
+   std::list<blr_ast_node *> *get_struct_ast_list() {
+      return &mASTStructs;
    }
    
 private:
