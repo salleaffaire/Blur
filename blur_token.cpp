@@ -9,7 +9,7 @@ void output_token(BLR_TOKEN_TYPE token) {
       std::cout << "+";
    }
    else if (blr_token_minus == token) {
-      std::cout << "+";
+      std::cout << "-";
    }
    else if (blr_token_star == token) {
       std::cout << "*";

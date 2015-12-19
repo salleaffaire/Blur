@@ -24,10 +24,27 @@ func void bar() {
    }
 }
 
+func int32[..] fibonacci(int32 length) {
+   var int32 x;
+   var int32[..] rval;
+   
+   rval.resize(length);
+   for (x=0;x<length;{x=x+1;}) {
+      if (x == 0) {
+         rval[x] = x;
+      }
+      else {
+         rval[x] = rval[x-1] + x;
+      }
+   }
+
+   return rval;
+}
+
 // Some more comments
 func void main() {
    var foo x;
 
-   print(x.->aplus(10)[10])[10][10].status();
+   print(x.->aplus(10)[10])[10][10-5].status();
    ->bar();
 }

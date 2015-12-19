@@ -56,7 +56,9 @@ class blr_parser {
 public:
    blr_parser() : mVerbose(true), mReported(false), mVerboseDebug(false), mState(true),
 		  mTypeSpecifierLevel(0),
-		  mpTokenList((std::list<std::shared_ptr<blr_token>> *)0) {}
+		  mpTokenList((std::list<std::shared_ptr<blr_token>> *)0),
+                  mIndentationLevel(0)
+   {}
 
    ~blr_parser() {}
 
@@ -484,10 +486,10 @@ public:
          else if (mState = match(blr_token_byte)) {
             rval = new blr_ast_node_base_type("byte", blr_type_byte);
          }
-         else if (mState = match(blr_token_byte)) {
+         else if (mState = match(blr_token_int32)) {
             rval = new blr_ast_node_base_type("int32", blr_type_int32);
          }
-         else if (mState = match(blr_token_byte)) {
+         else if (mState = match(blr_token_int64)) {
             rval = new blr_ast_node_base_type("int64", blr_type_int64);
          }
          else if (mState = match(blr_token_list)) {
@@ -520,19 +522,9 @@ public:
       if (mVerbose) {
          std::cout << "<expression>" << std::endl;
       }
-      
-      // Is it an assignement ?
-      if (isnext(blr_token_name) && issecondnext(blr_token_assignment)) {
-         if (mState) { mState = match(blr_token_name); }
-	 blr_ast_node *left = new blr_ast_node_expression_variable(mLastMatchedValue);
-         if (mState) { mState = match(blr_token_assignment); }
-         if (mState) { rval = expression(); }
-	 rval = new blr_ast_node_expression_assignment(left, rval);
-      }
-      else {
-         // Here we take a guess but it really can't be anything else
-         if (mState) { rval = complex_expression(); }
-      }
+     
+      // Here we take a guess but it really can't be anything else
+      if (mState) { rval = complex_expression(); }
    
       if (!mState) {
          error();
@@ -558,7 +550,8 @@ public:
       explist.push_back(rval);
       
       // Calling a member function on the *this* object 
-      while (mState && (isnext(blr_token_dot) || (isnext(blr_token_leftbracket)))) {
+      while (mState && (isnext(blr_token_dot) || (isnext(blr_token_leftbracket)) 
+                        || (isnext(blr_token_assignment)))) {
          // Is it an array access
 	 if (isnext(blr_token_leftbracket)) {
 	    rval = array_access();
@@ -571,6 +564,9 @@ public:
 	    else {
 	       rval = call();
 	    }
+         }
+         else if (match(blr_token_assignment)) {
+            rval = assignment();
          }
 	 explist.push_back(rval);
       }
@@ -627,7 +623,7 @@ public:
       while (mState && matchbin2()) {
 	 if (mVerbose) {
 	    std::cout << "Binary Operator" << std::endl;
-	 } 	 
+	 }
          if (mState) { 
 	    rval = new blr_ast_node_expression_binary_op(mLastMatchedTokenType, rval, simple_factor());
 	 } 
@@ -759,6 +755,26 @@ public:
       }
       else {
 	 rval = new blr_ast_node_expression_call("_@_ARRAY__", a);
+      }
+      return rval;
+   }
+
+   blr_ast_node *assignment() {
+      blr_ast_node *rval = 0;
+
+      std::vector<blr_ast_node *> a;
+
+      if (mVerbose) {
+         std::cout << "<assignement>" << std::endl;
+      }
+
+      if (mState) { a.push_back(complex_expression()); }
+      
+      if (!mState) {
+         error();
+      }
+      else {
+	 rval = new blr_ast_node_expression_call("_@_ASSIGN__", a);
       }
       return rval;
    }
@@ -1369,8 +1385,15 @@ public:
 	 output_expression(p->mCondition);
 	 std::cout << " ; ";
 	 output_statement(p->mUpdate);
-	 std::cout << " ) { ";
+	 std::cout << " ) { " << std::endl;
+         for (int i=0;i<mIndentationLevel;i++) {
+            std::cout << " ";
+         }
 	 output_statement(p->mLoopStatement);
+         std::cout << std::endl;
+         for (int i=0;i<mIndentationLevel;i++) {
+            std::cout << " ";
+         }
 	 std::cout << " } ";
       }
       else if (blr_ast_node_statement_foreach *p = dynamic_cast<blr_ast_node_statement_foreach *>(x)) {
@@ -1388,11 +1411,19 @@ public:
 	 output_expression(p->mRval);
       }
       else if (blr_ast_node_statement_compound *p = dynamic_cast<blr_ast_node_statement_compound *>(x)) {
+         mIndentationLevel += 3;
 	 std::cout << " { " << std::endl;
 	 for (auto &x: p->mStatementList) {
+            for (int i=0;i<mIndentationLevel;i++) {
+               std::cout << " ";
+            }
 	    output_statement(x);
 	    std::cout << std::endl;
 	 }
+         mIndentationLevel -= 3; 
+         for (int i=0;i<mIndentationLevel;i++) {
+            std::cout << " ";
+         }
 	 std::cout << " } ";
       }
       else if (blr_ast_node_variable_definition *p = dynamic_cast<blr_ast_node_variable_definition *>(x)) {
@@ -1454,7 +1485,6 @@ public:
    }
    
 private:
-
    bool mVerbose;
    bool mReported;
    bool mVerboseDebug;
@@ -1496,6 +1526,12 @@ private:
 
    // Type Names
    std::list<std::string> mDeclaredTypeList;
+
+
+   // Only used in debug functions
+   // ----------------------------------------------------------
+   unsigned int mIndentationLevel;
+
 };
 
 #endif
