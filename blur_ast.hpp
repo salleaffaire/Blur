@@ -77,6 +77,22 @@ public:
       mCallee(callee), mArgs(a) {}
 };
 
+class blr_ast_node_expression_call_member : public blr_ast_node_expression {
+public:
+   virtual ~blr_ast_node_expression_call_member() {
+      for (auto &x: mArgs) {
+         delete x;
+      }
+      delete mCalledOn;
+   }
+   std::string mCallee;
+   blr_ast_node *mCalledOn;
+   std::vector<blr_ast_node *> mArgs;
+   blr_ast_node_expression_call_member(std::string callee, blr_ast_node *calledon, std::vector<blr_ast_node *> a) : 
+      mCallee(callee), mCalledOn(calledon), mArgs(a) {}
+};
+
+
 class blr_ast_node_expression_defered_call : public blr_ast_node_expression {
 public:
    virtual ~blr_ast_node_expression_defered_call() {
@@ -111,19 +127,6 @@ public:
    blr_ast_node_expression_unary_op(BLR_TOKEN_TYPE op,
                                     blr_ast_node *e) : 
       mOp(op), mExp(e) {}
-};
-
-class blr_ast_node_expression_assignment : public blr_ast_node {
-public:
-   virtual ~blr_ast_node_expression_assignment() {
-      delete mLeft;
-      delete mRight;
-   }
-   blr_ast_node  *mLeft;
-   blr_ast_node  *mRight;
-   blr_ast_node_expression_assignment(blr_ast_node *left,
-				      blr_ast_node *right) : 
-      mLeft(left), mRight(right) {}
 };
 
 class blr_ast_node_expression_complex : public blr_ast_node {

@@ -45,6 +45,7 @@ func int32[..] fibonacci(int32 length) {
 func void main() {
    var foo x;
 
-   print(x.->aplus(10)[10])[10][10-5].status();
+   print(x.aplus(10)[10]) [10] [10-5]  . status();
+
    ->bar();
 }

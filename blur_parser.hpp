@@ -517,6 +517,55 @@ public:
       return rval;
    }
 
+   // This function is called at each level of the priority depth
+   // At any level the matched expression can be called upon or assign to something.
+   // 
+   blr_ast_node *augment_expression(blr_ast_node *x) {
+      blr_ast_node *rval = x;
+      
+      // We have an access operator ([) or a member function (.) or an assignment
+      while (mState && (isnext(blr_token_leftbracket) || isnext(blr_token_dot) || isnext(blr_token_assignment))) {    
+         if (mVerbose) {
+            std::cout << "Member Call" << std::endl;
+         }
+         
+         // Member Call
+         if (match(blr_token_dot)) {
+            std::string name;
+            if (mState) { match(blr_token_name); }
+            name = mLastMatchedValue;
+            if (mState) { match(blr_token_leftpar); }
+            std::vector<blr_ast_node *> mArguments = args();
+            if (mState) { match(blr_token_rightpar); }
+	    if (mState) { rval = new blr_ast_node_expression_call_member(name, rval, mArguments); }
+	 }
+         // Access
+         else if (match(blr_token_leftbracket)) {
+            std::vector<blr_ast_node *> mArguments;
+            mArguments.push_back(complex_expression());
+            if (mState) { rval = new blr_ast_node_expression_call_member("_@_ACCESS__", rval, mArguments); }
+            if (mState) { match(blr_token_rightbracket); }
+         }
+         // Assignment
+         else if (match(blr_token_assignment)) {
+            if (mVerbose) {
+               std::cout << "Assignment" << std::endl;
+            }
+            if (mState) {
+               std::vector<blr_ast_node *> mArguments;
+               mArguments.push_back(complex_expression());
+               rval = new blr_ast_node_expression_call_member("_@_ASSIGN__", rval, mArguments);
+            }
+         }
+      }
+      
+      return rval;
+      
+   }
+   
+   // Expression can be removed now --
+   // Assignement has been moved lower at the same level as the binary operator
+   // 
    blr_ast_node *expression() {
       blr_ast_node *rval = 0;
       if (mVerbose) {
@@ -525,7 +574,7 @@ public:
      
       // Here we take a guess but it really can't be anything else
       if (mState) { rval = complex_expression(); }
-   
+
       if (!mState) {
          error();
       }
@@ -536,6 +585,8 @@ public:
       return rval;
    }
 
+   // Complex expression will handle accesses operators [] and ()
+   // -- TODO
    blr_ast_node *complex_expression() {
       blr_ast_node *rval;
 
@@ -546,38 +597,8 @@ public:
       }
 
       // The result of this expression is used as the context and is the *this* object
-      if (mState) { rval = simple_expression(); }
-      explist.push_back(rval);
+      if (mState) { rval = augment_expression(simple_expression()); }
       
-      // Calling a member function on the *this* object 
-      while (mState && (isnext(blr_token_dot) || (isnext(blr_token_leftbracket)) 
-                        || (isnext(blr_token_assignment)))) {
-         // Is it an array access
-	 if (isnext(blr_token_leftbracket)) {
-	    rval = array_access();
-	 }
-	 // Is it a call
-	 else if (match(blr_token_dot)) {
-	    if (match(blr_token_rightarrow)) {
-	       rval = defered_call();
-	    }
-	    else {
-	       rval = call();
-	    }
-         }
-         else if (match(blr_token_assignment)) {
-            rval = assignment();
-         }
-	 explist.push_back(rval);
-      }
-
-      if (!mState) {
-         error();
-      }
-      else {
-	 rval = new blr_ast_node_expression_complex(explist);
-      }
-
       if (mVerboseDebug) {
          std::cout << "EXIT : <complex_expression>" << std::endl;
       }
@@ -591,7 +612,7 @@ public:
          std::cout << "<simple_expression>" << std::endl;
       } 
       
-      if (mState) { rval = simple_term(); }
+      if (mState) { rval = augment_expression(simple_term()); }
       
       while (mState && matchbin1()) {
 	 if (mVerbose) {
@@ -618,7 +639,7 @@ public:
          std::cout << "<simple_term>" << std::endl;
       } 
       
-      if (mState) { rval = simple_factor(); }
+      if (mState) { rval = augment_expression(simple_factor()); }
 
       while (mState && matchbin2()) {
 	 if (mVerbose) {
@@ -683,7 +704,8 @@ public:
          }
          else {
             // Empty expression
-            mState = false;
+            // If we don't find anything we need to exit without issues, it means it should match higher
+            // priority operations
          }
       }
 
@@ -734,47 +756,6 @@ public:
       }
       else {
 	 rval = new blr_ast_node_expression_call(name, a);
-      }
-      return rval;
-   }
-
-   blr_ast_node *array_access() {
-      blr_ast_node *rval = 0;
-
-      std::vector<blr_ast_node *> a;
-      if (mVerbose) {
-         std::cout << "<array_access>" << std::endl;
-      }
-
-      if (mState) { mState = match(blr_token_leftbracket); }
-      if (mState) { a = args(); }
-      if (mState) { mState = match(blr_token_rightbracket); }      
-      
-      if (!mState) {
-         error();
-      }
-      else {
-	 rval = new blr_ast_node_expression_call("_@_ARRAY__", a);
-      }
-      return rval;
-   }
-
-   blr_ast_node *assignment() {
-      blr_ast_node *rval = 0;
-
-      std::vector<blr_ast_node *> a;
-
-      if (mVerbose) {
-         std::cout << "<assignement>" << std::endl;
-      }
-
-      if (mState) { a.push_back(complex_expression()); }
-      
-      if (!mState) {
-         error();
-      }
-      else {
-	 rval = new blr_ast_node_expression_call("_@_ASSIGN__", a);
       }
       return rval;
    }
@@ -1325,6 +1306,17 @@ public:
 	 }
 	 std::cout << ")";
       }
+      else if (blr_ast_node_expression_call_member *p = dynamic_cast<blr_ast_node_expression_call_member *>(x)) {
+         output_expression(p->mCalledOn); 
+         std::cout << ".";
+	 std::cout << p->mCallee << "(";
+         //std::cout << p->mArgs.size() << " arguments" << std::endl;
+	 for (auto &x: p->mArgs) {
+	    output_expression(x);
+	    std::cout << " || ";
+	 }
+	 std::cout << ")";
+      }   
       else if (blr_ast_node_expression_defered_call *p = dynamic_cast<blr_ast_node_expression_defered_call *>(x)) {
 	 // This should find the expression call if branch 
 	 output_expression(p->mCall);
@@ -1340,11 +1332,6 @@ public:
 	 output_token(p->mOp);
 	 std::cout << " ";
 	 output_expression(p->mExp);
-      }
-      else if (blr_ast_node_expression_assignment *p = dynamic_cast<blr_ast_node_expression_assignment *>(x)) {
-	 output_expression(p->mLeft);
-	 std::cout << " = ";
-	 output_expression(p->mRight);
       }
       else if (blr_ast_node_expression_complex *p = dynamic_cast<blr_ast_node_expression_complex *>(x)) {
 	 std::cout << "CE( ";
