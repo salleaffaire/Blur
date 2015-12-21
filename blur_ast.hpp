@@ -15,6 +15,7 @@ enum BLR_TYPE {
    blr_type_string,
    blr_type_bit,
    blr_type_byte,
+   blr_type_int16,
    blr_type_int32,
    blr_type_int64,
    blr_type_void,
@@ -36,25 +37,32 @@ public:
    virtual ~blr_ast_node_expression() {}
 };
 
-class blr_ast_node_expression_number : public blr_ast_node_expression {
+class blr_ast_node_expression_integer_number_literal : public blr_ast_node_expression {
 public:
-   virtual ~blr_ast_node_expression_number() {}
+   virtual ~blr_ast_node_expression_integer_number_literal() {}
    int64_t mValue;
-   blr_ast_node_expression_number(int64_t value) : mValue(value) {}
+   blr_ast_node_expression_integer_number_literal(int64_t value) : mValue(value) {}
 };
 
-class blr_ast_node_expression_literal : public blr_ast_node_expression {
+class blr_ast_node_expression_float_number_literal : public blr_ast_node_expression {
 public:
-   virtual ~blr_ast_node_expression_literal() {}
+   virtual ~blr_ast_node_expression_float_number_literal() {}
+   double mValue;
+   blr_ast_node_expression_float_number_literal(int64_t value) : mValue(value) {}
+};
+
+class blr_ast_node_expression_string_literal : public blr_ast_node_expression {
+public:
+   virtual ~blr_ast_node_expression_string_literal() {}
    std::string mValue;
-   blr_ast_node_expression_literal(std::string value) : mValue(value) {}
+   blr_ast_node_expression_string_literal(std::string value) : mValue(value) {}
 };
 
-class blr_ast_node_expression_boolean : public blr_ast_node_expression {
+class blr_ast_node_expression_boolean_literal : public blr_ast_node_expression {
 public:
-   virtual ~blr_ast_node_expression_boolean() {}
+   virtual ~blr_ast_node_expression_boolean_literal() {}
    bool mValue;
-   blr_ast_node_expression_boolean(bool value) : mValue(value) {}
+   blr_ast_node_expression_boolean_literal(bool value) : mValue(value) {}
 };
 
 class blr_ast_node_expression_variable : public blr_ast_node_expression {

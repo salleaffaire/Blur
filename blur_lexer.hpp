@@ -95,6 +95,7 @@ public:
       mTokenTypeNames[blr_token_list]          = "List";
       mTokenTypeNames[blr_token_bit]           = "Bit";
       mTokenTypeNames[blr_token_byte]          = "Byte";
+      mTokenTypeNames[blr_token_int16]         = "Int16";
       mTokenTypeNames[blr_token_int32]         = "Int32";
       mTokenTypeNames[blr_token_int64]         = "Int64";
       mTokenTypeNames[blr_token_void]          = "Void";
@@ -158,6 +159,7 @@ public:
       mReservedWords["bit"]     = blr_token_bit;
       mReservedWords["byte"]    = blr_token_byte;
       mReservedWords["bool"]    = blr_token_bool;
+      mReservedWords["int16"]   = blr_token_int16;
       mReservedWords["int32"]   = blr_token_int32;
       mReservedWords["int64"]   = blr_token_int64;
       mReservedWords["list"]    = blr_token_list;

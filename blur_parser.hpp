@@ -684,16 +684,16 @@ public:
 	    rval = new blr_ast_node_expression_variable(mLastMatchedValue);
 	 }
          else if (match(blr_token_true))    {
-	    rval = new blr_ast_node_expression_boolean(true);
+	    rval = new blr_ast_node_expression_boolean_literal(true);
 	 }
          else if (match(blr_token_false))   {
-	    rval = new blr_ast_node_expression_boolean(false);
+	    rval = new blr_ast_node_expression_boolean_literal(false);
 	 }
          else if (match(blr_token_numeral)) {
-	    rval = new blr_ast_node_expression_number(atoi(mLastMatchedValue.c_str()));
+	    rval = new blr_ast_node_expression_integer_number_literal(atoi(mLastMatchedValue.c_str()));
 	 }
          else if (match(blr_token_literal)) {
-	    rval = new blr_ast_node_expression_literal(mLastMatchedValue);
+	    rval = new blr_ast_node_expression_string_literal(mLastMatchedValue);
 	 }
          else if (match(blr_token_leftpar)) {
             if (mState) { rval = complex_expression(); }
@@ -1279,13 +1279,16 @@ public:
 
    void output_expression(blr_ast_node *x) {
       //std::cout << "E( ";
-      if (blr_ast_node_expression_number *p = dynamic_cast<blr_ast_node_expression_number *>(x)) {
+      if (blr_ast_node_expression_integer_number_literal *p = 
+          dynamic_cast<blr_ast_node_expression_integer_number_literal *>(x)) {
 	 std::cout << "N:" << (int)p->mValue << " ";
       }
-      else if (blr_ast_node_expression_literal *p = dynamic_cast<blr_ast_node_expression_literal *>(x)) {
+      else if (blr_ast_node_expression_string_literal *p = 
+               dynamic_cast<blr_ast_node_expression_string_literal *>(x)) {
 	 std::cout << "L:" << p->mValue << " ";
       }
-      else if (blr_ast_node_expression_boolean *p = dynamic_cast<blr_ast_node_expression_boolean *>(x)) {
+      else if (blr_ast_node_expression_boolean_literal *p = 
+               dynamic_cast<blr_ast_node_expression_boolean_literal *>(x)) {
 	 std::cout << "B:";
 	 if (p->mValue == true) {
 	    std::cout << "TRUE";

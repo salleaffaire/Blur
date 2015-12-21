@@ -60,13 +60,16 @@ public:
 
 class blr_core {
 public:
+   // Size of 0xFFFFFFFF is undefined
+   // 
    blr_core() {
-      mTypeMap["void"]   = new blr_type(0); // Size in bytes
-      mTypeMap["bit"]    = new blr_type(1); // 
-      mTypeMap["int32"]  = new blr_type(4);
-      mTypeMap["int64"]  = new blr_type(8);
-      mTypeMap["string"] = new blr_type(0xFFFFFFFF);
-      mTypeMap["bool"]   = new blr_type(1);
+      mTypeMap["void"]   = new blr_type(0);           // 0 byte
+      mTypeMap["bit"]    = new blr_type(1);           // 1 byte  
+      mTypeMap["int16"]  = new blr_type(2);           // 2 bytes
+      mTypeMap["int32"]  = new blr_type(4);           // 4 bytes
+      mTypeMap["int64"]  = new blr_type(8);           // 8 bytes
+      mTypeMap["string"] = new blr_type(0xFFFFFFFF);  // undef 
+      mTypeMap["bool"]   = new blr_type(1);           // 1 byte
    }
 
    ~blr_core() {
