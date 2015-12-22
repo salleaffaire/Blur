@@ -11,14 +11,16 @@
 
 
 enum BLR_TYPE {
-   blr_type_bool,
-   blr_type_string,
-   blr_type_bit,
-   blr_type_byte,
+   // Base
+   blr_type_int8,
    blr_type_int16,
    blr_type_int32,
    blr_type_int64,
    blr_type_void,
+   // Built-in High Level
+   blr_type_string,
+   blr_type_list,
+   // User defined
    blr_type_dectype
 };
 
@@ -152,16 +154,16 @@ public:
 
 // Type declaration
 // ---------------------------------------------------------------------------------
-class blr_ast_node_struct: public blr_ast_node {
+class blr_ast_node_class: public blr_ast_node {
 public:
-   virtual ~blr_ast_node_struct() {
+   virtual ~blr_ast_node_class() {
       for (auto &x: mDecDefs) {
          delete x;
       }   
    }
    std::string mName;
    std::vector<blr_ast_node *> mDecDefs;
-   blr_ast_node_struct(std::string name, std::vector<blr_ast_node *> decdefs) :
+   blr_ast_node_class(std::string name, std::vector<blr_ast_node *> decdefs) :
       mName(name), mDecDefs(decdefs) {}
 };
 
@@ -181,9 +183,10 @@ public:
       delete mOf;
    }
    std::string mSize;
+   unsigned int mSizeNumeral;
    blr_ast_node *mOf;
    blr_ast_node_array(std::string size) :
-      mSize(size) {}
+      mSize(size), mSizeNumeral(atoi(size.c_str())) {}
 };
 
 class blr_ast_node_list: public blr_ast_node {

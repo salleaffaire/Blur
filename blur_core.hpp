@@ -6,157 +6,278 @@
 #include <vector>
 #include <iostream>
 #include "blur_ast.hpp"
+#include "blur_common.hpp"
+
+// Base type - each type derives from this base 
+// Built in basic types are derived directly from this and only have a size (in bytes)
+//
+// Each type has a type descriptor which is stored in the type descriptor table 
+// The format of the type descriptor table is the following
+// -----------------------------------------------------------------------------------------------
+// Basic Types 
+//  
+// 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+// -----------------------------------------------------------------------------------------------
+// [ size in bytes                                                                               ]
+// [ index in class function table (CFT)                                                         ]
+// [ index in class variable table (CVT)                                                         ]
+ 
+
+// Each object has the following class in memory
+//
+// 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+// -----------------------------------------------------------------------------------------------
+// [ is virtual (0 not)  ] [ pointer to dynamic type table in type desccritor table (TDT)        ]
+// [ object ... ] 
 
 
+// NOTES:::
+// -----------------------------------------------------------------------------------------------
+// [ array depth                                                                                 ]
+// [ depth 0 size                                                                                ]
+// [ ...                                                                                         ]
+// [ depth n size                                                                                ]
+
+
+class blr_core_function {
+public:
+public:
+   blr_core_function() {
+   }
+   ~blr_core_function() { 
+   }
+};
+
+class blr_core_member_variable {
+public:
+   blr_core_member_variable(std::string type, unsigned int offset) :
+      mTypeName(type), mOffset(offset) {}
+
+   std::string  mTypeName;
+   unsigned int mOffset;
+};
+
+// Type Descriptor Table (TDT)
+class blr_tdt {
+public:
+   blr_tdt() : mTable((uint8_t *)0), mSize(0) {
+
+   }
+   ~blr_tdt() {
+      if (mTable) { delete mTable; }
+   }
+   uint8_t *mTable;
+   uint32_t mSize;
+};
+
+
+// Class descriptors
 class blr_type {
 public:
-   blr_type(unsigned int size) : mSize(size) {}
-   unsigned int mSize;
-};
-
-class blr_core_structure_variable {
-public:
-   blr_core_structure_variable(std::string type, unsigned int offset, unsigned int size) :
-      mType(type), mOffset(offset), mSize(size) {}
-   std::string  mType;
-   unsigned int mOffset;
-   unsigned int mSize;
-};
-
-class blr_core_structure_function {
-public:
-};
-
-class blr_core_structure : public blr_type {
-public:
-   blr_core_structure() : blr_type(0) {
-
-   }
-   ~blr_core_structure() {
-      for (auto &x: mVariableMap) {
+   blr_type()  {}
+   blr_type(uint32_t size) : mSize(size) {}
+   ~blr_type() {
+      for (auto &x: mCFT) {
 	 delete x.second;
       }
-      for (auto &x: mFunctionMap) {
+      for (auto &x: mCVT) {
 	 delete x.second;
-      }   
-   }
-   
-   // Add a variable to the structure - this function is called from add_structure
-   // in blr_core
-   void add_variable(std::string name, blr_core_structure_variable *var) {
-      mVariableMap[name] = var;
-   }
-   void add_function(std::string name, blr_core_structure_function *fun) {
-      mFunctionMap[name] = fun;
+      }
    }
 
-   // Variable Map <Variable Name -> Structure Variable>
-   std::map<std::string, blr_core_structure_variable *> mVariableMap;
+   // Total size of the object
+   uint32_t mSize;
 
-   // Function Map <Variable Name -> Structure Variable>
-   std::map<std::string, blr_core_structure_function *> mFunctionMap;
-   
+   // Map of member functions
+   std::map<std::string, blr_core_function *>          mCFT;
+   // Map of member variables
+   std::map<std::string, blr_core_member_variable *>   mCVT;
 };
+
 
 class blr_core {
 public:
+   // TDT
+   blr_tdt mTDT;
+
    // Size of 0xFFFFFFFF is undefined
    // 
    blr_core() {
-      mTypeMap["void"]   = new blr_type(0);           // 0 byte
-      mTypeMap["bit"]    = new blr_type(1);           // 1 byte  
-      mTypeMap["int16"]  = new blr_type(2);           // 2 bytes
-      mTypeMap["int32"]  = new blr_type(4);           // 4 bytes
-      mTypeMap["int64"]  = new blr_type(8);           // 8 bytes
-      mTypeMap["string"] = new blr_type(0xFFFFFFFF);  // undef 
-      mTypeMap["bool"]   = new blr_type(1);           // 1 byte
+      // Pushing all base type to the TypeMap
+      mTypeMap["void"]   = new blr_type(0);    // 0 byte
+      mTypeMap["int8"]   = new blr_type(1);    // 1 byte
+      mTypeMap["int16"]  = new blr_type(2);    // 2 bytes
+      mTypeMap["int32"]  = new blr_type(4);    // 4 bytes
+      mTypeMap["int64"]  = new blr_type(8);    // 8 bytes
+
+
+      mTypeMap["list"]   = new blr_type(0);
+      mTypeMap["string"] = new blr_type(0);
    }
 
    ~blr_core() {
       for (auto &x: mTypeMap) {
 	 delete x.second;
       }
-      for (auto &x: mStructureMap) {
-	 delete x.second;
+   }
+
+   bool build_tdt() {
+      if (mTDT.mTable != 0) {
+	 delete []mTDT.mTable;
+      }
+      uint32_t size = mTypeMap.size() * 2 * 4;
+      mTDT.mTable = new uint8_t[size];
+      mTDT.mSize = size;
+      
+      uint8_t *p =  mTDT.mTable;
+      for (auto &x: mTypeMap) {
+	 blr_store_little_endian(p, x.second->mSize); p +=4;
+	 blr_store_little_endian(p, (uint32_t)0); p+= 4;
       }
    }
 
-   bool add_structure(blr_ast_node *s) {
+   void adjust_offset(unsigned int &offset, unsigned int size) {
+      // If not already aligned
+      if ((offset & 0x03) != 0) {
+	 unsigned int remainder_complement = 0x04 - (offset & 0x03);
+	 if (size > remainder_complement) {
+	    offset += remainder_complement;
+	 }
+      }
+   }
+
+   unsigned int calculate_size(blr_ast_node *node) {
+      unsigned int rval = 0;
+      
+      if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(node)) {	 
+	 rval = mTypeMap[p->mName]->mSize;
+      }
+      else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(node)) {
+	 rval = p->mSizeNumeral * calculate_size(p->mOf);
+      }
+
+      return rval;
+   }
+
+   std::string get_base_type(blr_ast_node *node) {
+      std::string rval  = "";
+      if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(node)) {
+	 rval = p->mName;
+      }
+      else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(node)) {
+	 rval = get_base_type(p->mOf);
+      }
+      return rval;
+   }
+
+   bool add_type(blr_ast_node *s) {
       bool rval = true; 
-      blr_core_structure *bcs = new blr_core_structure;
-      std::string name;
+      
+      blr_type *type = new blr_type;
+
+      std::string class_name;
       unsigned int current_offset = 0;
       
-      if (blr_ast_node_struct *p = dynamic_cast<blr_ast_node_struct *>(s)) {
-	 name = p->mName;
+      // Test if it's indeed a class, it better be but just in case something went horibly wrong
+      if (blr_ast_node_class *p = dynamic_cast<blr_ast_node_class *>(s)) {
+	 // Catch the class name
+	 class_name = p->mName;
+	 // For each element of the class (it could be a var, a func or a class)
 	 for (auto &x: p->mDecDefs) {
-	    // We have a var
+	    // We have a variable
 	    if (blr_ast_node_variable_definition *y = dynamic_cast<blr_ast_node_variable_definition *>(x)) {
-	       std::string type = "";
-	       type_specifier_name(y->mType, type);
-	       blr_core_structure_variable *bcsv = new blr_core_structure_variable(type, 0, 0);
-	       bcs->add_variable(y->mName, bcsv);
+	       std::string var_name = y->mName;
+	       // It is of a base type
+	       if (blr_ast_node_base_type *z = dynamic_cast<blr_ast_node_base_type *>(y->mType)) {
+		  // Does the type name exist?
+		  auto it = mTypeMap.find(z->mName);
+		  if (it != mTypeMap.end()) {
+		     // Get its size
+		     unsigned int size = calculate_size(z);
+		     // There may be a need to align the data
+		     adjust_offset(current_offset, size);
+		     type->mCVT[var_name] = new blr_core_member_variable(z->mName, current_offset);
+		     current_offset += size;
+		  }
+		  else {
+		     std::cout << "error : " << z->mName << " used in class " 
+			       << class_name << " does not exist. " << std::endl; 
+		     rval = false;
+		  }
+	       }
+	       // it is an array
+	       else if (blr_ast_node_array *z = dynamic_cast<blr_ast_node_array *>(y->mType)) {
+		  // Does the type name exist?
+		  std::string base_type = get_base_type(z);
+		  auto it = mTypeMap.find(base_type);
+		  if (it != mTypeMap.end()) {
+		     // Get its size
+		     unsigned int size = calculate_size(z);
+		     // There may be a need to align the data
+		     adjust_offset(current_offset, size);
+		     type->mCVT[var_name] = new blr_core_member_variable(base_type, current_offset);
+		     current_offset += size;
+		  }
+		  else {
+		     std::cout << "error : " << base_type << " used in class " 
+			       << class_name << " does not exist. " << std::endl; 
+		     rval = false;
+		  }
+		  
+	       }
+	       // it is an list
+	       else if (blr_ast_node_list *z = dynamic_cast<blr_ast_node_list *>(y->mType)) {
+		  
+	       }
+	       
 	    }
-	    // We have a nested structure
-	    else if (blr_ast_node_struct *y = dynamic_cast<blr_ast_node_struct *>(x)) {
+	    // We have a nested class
+	    else if (blr_ast_node_class *y = dynamic_cast<blr_ast_node_class *>(x)) {
 	       
 	    }
 	    // We have a member function
 	    else if (blr_ast_node_function_prototype *y = dynamic_cast<blr_ast_node_function_prototype *>(x)) {
 	       std::cout << "FOUND FUNCTION!!!! " << std::endl;
-	       bcs->add_function(y->mName, new blr_core_structure_function);
 	    }
 	 }
       }
       else {
-	 std::cout << "Not a Structure" << std::endl;
+	 std::cout << "Not a class !!!" << std::endl;
 	 rval = false;
-      }
+      }      
 
-      mStructureMap[name] = bcs;
+      if (rval) {
+	 // Adjust the size 
+	 type->mSize = current_offset;
+	 // Add it to the map
+	 mTypeMap[class_name] = type;
+      }
 
       return rval;
    } 
 
-   std::string type_specifier_name(blr_ast_node *x, std::string &tsname) {
-      if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
-	 tsname += p->mName;
-      }
-      // We have an array
-      else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(x)) {
-         type_specifier_name(p->mOf, tsname);
-	 tsname += "[";
-	 tsname += p->mSize;
-	 tsname += "]";
-      }
-      // We have a list
-      else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(x)) {
-	 std::string nullstr = "";
-	 tsname = "list{" + type_specifier_name(p->mOf, nullstr) + "}";
-      }
-      return tsname;
-   }
 
-   void output_structures() {
-      for (auto &x: mStructureMap) {
-	 std::cout << "Structure : " << x.first;
-	 std::cout << std::endl;
-	 for (auto &y: (x.second)->mVariableMap) {
-	    std::cout << " Variable : " << y.first << " of type " << (y.second)->mType << std::endl; 	    
+   void output_types() {
+      unsigned int count = 0;
+      for (auto &x: mTypeMap) {
+	 std::cout << "Type " << count << ": " << x.first << " of " << x.second->mSize << " bytes." << std::endl;
+
+	 // Output members
+	 std::cout << x.second->mCVT.size() << " variable members." << std::endl;
+	 for (auto &y: x.second->mCVT) {
+	    std::cout << " * " << y.first << " at offset " << y.second->mOffset << std::endl;
 	 }
-	 for (auto &y: (x.second)->mFunctionMap) {
-	    std::cout << " Function : " << y.first; 	    
+	 std::cout << x.second->mCFT.size() << " function members." << std::endl;
+	 for (auto &y: x.second->mCFT) {
+	    
 	 }
-	 std::cout << std::endl;
+	 ++count;
       }
    }
 
-   // Base Types
+   // All Types
    std::map<std::string, blr_type *> mTypeMap;
 
-
-   // Declared Types
-   std::map<std::string, blr_core_structure *> mStructureMap;
    
 };
 

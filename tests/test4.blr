@@ -1,22 +1,28 @@
 // Some comments
 var list{byte} myvar;
 
-struct foo {
-   var list{list{byte[32][32]}[16]} history;
-   var bit[32] a;
-   func bit[32] aplus(bit[32] x) {
+class foo {
+   var list{list{int8[32][32]}[16]} history;
+   var int8[8][4] a;
+   var int8[10]   b;
+   func int8[32] aplus(int8[32] x) {
       return a + x;
    }
-   struct goo {
+   class goo {
       var list{list{void[..]}}[..] x;
    }
+   var int8  v0;
+   var int32 v1;
+   var int16 v2;
+   var int8  v3;
+   var int8  g0;
 }
 
 func void bar() {
-   var byte[4] a;
+   var int8[4] a;
 
    {
-      var bit[32] x;
+      var int32 x;
       // Note that for take expression;expression;statement
       for (x=0;x<4;{x=x-1;}) {
          x = x;

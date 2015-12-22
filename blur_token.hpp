@@ -18,16 +18,16 @@ enum BLR_TOKEN_TYPE {
    blr_token_foreach,
    blr_token_break,
 
-   blr_token_struct,
+   // Class
+   blr_token_class,
 
-   blr_token_bit,
-   blr_token_byte,
+   blr_token_int8,
    blr_token_int16,
    blr_token_int32,
    blr_token_int64,
    blr_token_list,
+   blr_token_string,
    blr_token_void,
-   blr_token_bool,
    blr_token_sizeof,
    blr_token_in,
    blr_token_using,

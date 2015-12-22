@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       parser.output_all_types();
 
       // Output all structs
-      parser.output_all_structs();
+      parser.output_all_classes();
 
       // Output all Functions
       parser.output_all_functions();
@@ -81,11 +81,18 @@ int main(int argc, char *argv[]) {
       // Output declared types names
       parser.output_all_declaredtypenames();
 
+      if (true == parser.get_state()) {
+	 std::cout << "AST generation completed without errors." << std::endl << std::endl;
+      }
+      else {
+	 std::cout << "PARSING ERRORS." << std::endl << std::endl;
+      }
+ 
       // Core Processing
       // --------------------------------------------------------------
       // Building core declared structures
       for (auto &x: *(parser.get_struct_ast_list())) {
-	 core.add_structure(x);
+	 core.add_type(x);
       }
 
       // TEST Core State
@@ -96,16 +103,10 @@ int main(int argc, char *argv[]) {
 
       
 
-      core.output_structures();
+      core.output_types();
       
 
-      if (true == parser.get_state()) {
-	 std::cout << "Compilation completed without errors." << std::endl << std::endl;
-      }
-      else {
-	 std::cout << "PARSING ERRORS." << std::endl << std::endl;
-      }
-   }
+  }
 #endif
      
    return 0;

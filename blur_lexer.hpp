@@ -83,7 +83,7 @@ public:
       mTokenTypeNames[blr_token_for]           = "For";  
       mTokenTypeNames[blr_token_foreach]       = "For Each";  
 
-      mTokenTypeNames[blr_token_struct]        = "Struct";       
+      mTokenTypeNames[blr_token_class]         = "Class";       
       mTokenTypeNames[blr_token_in]            = "In"; 
       mTokenTypeNames[blr_token_sizeof]        = "Sizeof"; 
       mTokenTypeNames[blr_token_using]         = "Using";
@@ -92,14 +92,17 @@ public:
       mTokenTypeNames[blr_token_true]          = "True";
       mTokenTypeNames[blr_token_false]         = "False";
 
-      mTokenTypeNames[blr_token_list]          = "List";
-      mTokenTypeNames[blr_token_bit]           = "Bit";
-      mTokenTypeNames[blr_token_byte]          = "Byte";
+      // Base Types
+      mTokenTypeNames[blr_token_int8]          = "Int8";
       mTokenTypeNames[blr_token_int16]         = "Int16";
       mTokenTypeNames[blr_token_int32]         = "Int32";
       mTokenTypeNames[blr_token_int64]         = "Int64";
       mTokenTypeNames[blr_token_void]          = "Void";
-      mTokenTypeNames[blr_token_bool]          = "Boid";
+
+      // Built in higher level types
+      mTokenTypeNames[blr_token_list]          = "List";
+      mTokenTypeNames[blr_token_string]        = "String";
+
 
       // Operators
       mTokenTypeNames[blr_token_slash]         = "Slash";
@@ -148,23 +151,26 @@ public:
       mReservedWords["var"]     = blr_token_var;
       mReservedWords["while"]   = blr_token_while;
       mReservedWords["break"]   = blr_token_break;
+      mReservedWords["return"]  = blr_token_return;
       mReservedWords["if"]      = blr_token_if;
       mReservedWords["else"]    = blr_token_else;     
       mReservedWords["for"]     = blr_token_for;     
       mReservedWords["foreach"] = blr_token_foreach;
-      mReservedWords["struct"]  = blr_token_struct;
+      mReservedWords["class"]   = blr_token_class;
       mReservedWords["in"]      = blr_token_in;
       mReservedWords["using"]   = blr_token_using;      
       mReservedWords["sizeof"]  = blr_token_sizeof;
-      mReservedWords["bit"]     = blr_token_bit;
-      mReservedWords["byte"]    = blr_token_byte;
-      mReservedWords["bool"]    = blr_token_bool;
+
+      mReservedWords["int8"]    = blr_token_int8;
       mReservedWords["int16"]   = blr_token_int16;
       mReservedWords["int32"]   = blr_token_int32;
       mReservedWords["int64"]   = blr_token_int64;
-      mReservedWords["list"]    = blr_token_list;
       mReservedWords["void"]    = blr_token_void;
-      mReservedWords["return"]  = blr_token_return;
+
+      mReservedWords["list"]    = blr_token_list;
+      mReservedWords["string"]  = blr_token_string;
+      
+
       mReservedWords["true"]    = blr_token_true;
       mReservedWords["false"]   = blr_token_false;
 

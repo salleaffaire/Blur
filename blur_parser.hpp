@@ -19,7 +19,7 @@ enum BLR_RULE {
    blr_rule_decdef_list,
    blr_rule_decdef_rest,
    blr_rule_decdef,
-   blr_rule_struct_declaration,
+   blr_rule_class_declaration,
    blr_rule_data_definition,
    blr_rule_data_definition_cond,
    blr_rule_type_specifier,
@@ -115,8 +115,8 @@ public:
          std::cout << "<decdef>" << std::endl;
       }
 
-      if (isnext(blr_token_struct)) {
-         rval = struct_declaration();
+      if (isnext(blr_token_class)) {
+         rval = class_declaration();
       }
       else if (isnext(blr_token_var)) {
          data_definition();
@@ -138,14 +138,14 @@ public:
       return rval;
    }
 
-   blr_ast_node *decdef_struct() {
+   blr_ast_node *decdef_class() {
       blr_ast_node *rval = 0;
       if (mVerbose) {
-         std::cout << "<decdef_struct>" << std::endl;
+         std::cout << "<decdef_class>" << std::endl;
       }
 
-      if (isnext(blr_token_struct)) {
-         rval = struct_declaration();
+      if (isnext(blr_token_class)) {
+         rval = class_declaration();
       }
       else if (isnext(blr_token_var)) {
          rval = data_definition();
@@ -159,7 +159,7 @@ public:
       }
 
       if (mVerboseDebug) {
-         std::cout << "EXIT : <decdef_struct>" << std::endl;
+         std::cout << "EXIT : <decdef_class>" << std::endl;
       }
       return rval;
    }
@@ -177,16 +177,16 @@ public:
       }     
    }
    
-   blr_ast_node *struct_declaration() {
+   blr_ast_node *class_declaration() {
       std::vector<blr_ast_node *> decdefs;
       std::string name;
       blr_ast_node *rval;
 
       if (mVerbose) {
-         std::cout << "<struct_declaration>" << std::endl;
+         std::cout << "<class_declaration>" << std::endl;
       }
       
-      if (mState) { mState = match(blr_token_struct); }
+      if (mState) { mState = match(blr_token_class); }
       if (mState) { mState = match(blr_token_name); }
       if (mState) { 
 	 name = mLastMatchedValue;
@@ -197,7 +197,7 @@ public:
       if (mState) { 
          do {
             if (mState) {
-               rval = decdef_struct();
+               rval = decdef_class();
                if (mState) { decdefs.push_back(rval); }
             }
             
@@ -222,7 +222,7 @@ public:
 	 
 	 fullname += name; 	 
 
-         rval = new blr_ast_node_struct(fullname, std::move(decdefs));	 
+         rval = new blr_ast_node_class(fullname, std::move(decdefs));	 
   
 	 // Add the structure's AST node to the parser's list
          mASTStructs.push_back(rval);
@@ -480,11 +480,11 @@ public:
          std::cout << "<base_type>" << std::endl;
       } 
       if (mState) {
-         if (mState = match(blr_token_bit)) {
-            rval = new blr_ast_node_base_type("bit", blr_type_bit);
+         if (mState = match(blr_token_int8)) {
+            rval = new blr_ast_node_base_type("int8", blr_type_int8);
          }
-         else if (mState = match(blr_token_byte)) {
-            rval = new blr_ast_node_base_type("byte", blr_type_byte);
+         else if (mState = match(blr_token_int16)) {
+            rval = new blr_ast_node_base_type("int16", blr_type_int32);
          }
          else if (mState = match(blr_token_int32)) {
             rval = new blr_ast_node_base_type("int32", blr_type_int32);
@@ -492,6 +492,10 @@ public:
          else if (mState = match(blr_token_int64)) {
             rval = new blr_ast_node_base_type("int64", blr_type_int64);
          }
+         else if (mState = match(blr_token_void)) {
+            rval = new blr_ast_node_base_type("void", blr_type_void);
+         }
+	 // Built-In High Level (BIHL) List 
          else if (mState = match(blr_token_list)) {
             blr_ast_node *list_type;
             if (mState) { mState = match(blr_token_leftbrace); }
@@ -499,9 +503,8 @@ public:
             if (mState) { mState = match(blr_token_rightbrace); }
             rval = new blr_ast_node_list("list", list_type);
          }
-         else if (mState = match(blr_token_void)) {
-            rval = new blr_ast_node_base_type("void", blr_type_void);
-         }
+
+	 // User defined type
          else if (mState = match(blr_token_name)) {
             rval = new blr_ast_node_base_type(mLastMatchedValue, blr_type_dectype);
          }
@@ -1175,17 +1178,14 @@ public:
    
    void output_type_name(blr_ast_node *x) {
       if (blr_ast_node_base_type *p = dynamic_cast<blr_ast_node_base_type *>(x)) {
-         if (p->mType == blr_type_bool) {
-            std::cout << "bool";
-         }
-         else if (p->mType == blr_type_string) {
+	 if (p->mType == blr_type_string) {
             std::cout << "string";
          }
-         else if (p->mType == blr_type_bit) {
-            std::cout << "bit";
+         else if (p->mType == blr_type_int8) {
+            std::cout << "int8";
          }         
-         else if (p->mType == blr_type_byte) {
-            std::cout << "byte";
+         else if (p->mType == blr_type_int16) {
+            std::cout << "int16";
          }
          else if (p->mType == blr_type_int32) {
             std::cout << "int32";
@@ -1212,13 +1212,13 @@ public:
       }
    }
 
-   void output_struct(blr_ast_node *x) {
-      std::cout << "struct {" << std::endl;
-      for (auto &y: dynamic_cast<blr_ast_node_struct *>(x)->mDecDefs) {
+   void output_class(blr_ast_node *x) {
+      std::cout << "class {" << std::endl;
+      for (auto &y: dynamic_cast<blr_ast_node_class *>(x)->mDecDefs) {
          //std::cout << x << std::endl;
-         // We have a struct
-         if (blr_ast_node_struct *p = dynamic_cast<blr_ast_node_struct *>(y)) {
-            output_struct(p);
+         // We have a class
+         if (blr_ast_node_class *p = dynamic_cast<blr_ast_node_class *>(y)) {
+            output_class(p);
          }
          // We have a var
          else if (blr_ast_node_variable_definition *p = 
@@ -1435,11 +1435,11 @@ public:
       std::cout << std::endl << std::endl;;
    } 
 
-   void output_all_structs() {
+   void output_all_classes() {
       std::cout << "----------------------------------------------------------------" << std::endl;
-      std::cout << "Output " << mASTStructs.size() << " struct(s)" << std::endl;
+      std::cout << "Output " << mASTStructs.size() << " class(es)" << std::endl;
       for (auto &x: mASTStructs) {
-         output_struct(x);
+         output_class(x);
 	 std::cout << std::endl;
       }
       std::cout << std::endl << std::endl;
