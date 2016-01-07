@@ -1,5 +1,5 @@
 // Some comments
-var list{byte} myvar;
+var list{int8} myvar;
 
 class foo {
    var list{list{int8[32][32]}[16]} history;
@@ -9,7 +9,7 @@ class foo {
       return a + x;
    }
    class goo {
-      var list{list{void[..]}}[..] x;
+      var list{list{int16[8]}}[8] x;
    }
    var int8  v0;
    var int32 v1;

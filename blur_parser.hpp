@@ -55,6 +55,7 @@ enum BLR_RULE {
 class blr_parser {
 public:
    blr_parser() : mVerbose(true), mReported(false), mVerboseDebug(false), mState(true),
+		  mDeclarativeScopeLevel(0),
 		  mTypeSpecifierLevel(0),
 		  mpTokenList((std::list<std::shared_ptr<blr_token>> *)0),
                   mIndentationLevel(0)
@@ -148,7 +149,7 @@ public:
          rval = class_declaration();
       }
       else if (isnext(blr_token_var)) {
-         rval = data_definition();
+         rval = data_declaration();
       }
       else if (isnext(blr_token_func)) {
          rval = fun_declaration();
@@ -265,6 +266,7 @@ public:
       }
       else {
          rval = new blr_ast_node_variable_declaration(name, type);
+
       }
 
       if (mVerboseDebug) {
@@ -309,6 +311,10 @@ public:
       }
       else {
          rval = new blr_ast_node_variable_definition(name, type, cond);
+	 // Adding it to the global variable list
+	 if (mDeclarativeScopeLevel == 0) {
+	    mGlobalVariables.push_back(rval);
+	 }
       }
 
       if (mVerboseDebug) {
@@ -331,7 +337,9 @@ public:
       if (mVerbose) {
          std::cout << "<fun_declaration>" << std::endl;
       }
-      
+
+      ++mDeclarativeScopeLevel;
+
       if (mState) { mState = match(blr_token_func); }
       if (mState) { returntype = type_specifier(); }
       if (mState) { mState = match(blr_token_name); }
@@ -359,6 +367,8 @@ public:
 	 rval = new blr_ast_node_function_prototype(fullname, mStructureDepth, paramtypes, returntype, body);
 	 mASTFunctions.push_back(rval);
       }
+
+      --mDeclarativeScopeLevel;
 
       if (mVerboseDebug) {
          std::cout << "EXIT: <fun_declaration>" << std::endl;
@@ -620,9 +630,10 @@ public:
       while (mState && matchbin1()) {
 	 if (mVerbose) {
 	    std::cout << "Binary Operator" << std::endl;
-	 } 
+	 }
+	 BLR_TOKEN_TYPE tt = mLastMatchedTokenType;
          if (mState) { 
-	    rval = new blr_ast_node_expression_binary_op(mLastMatchedTokenType, rval, simple_term());
+	    rval = new blr_ast_node_expression_binary_op(tt, rval, simple_term());
 	 } 
       }
 
@@ -648,8 +659,9 @@ public:
 	 if (mVerbose) {
 	    std::cout << "Binary Operator" << std::endl;
 	 }
+	 BLR_TOKEN_TYPE tt = mLastMatchedTokenType;
          if (mState) { 
-	    rval = new blr_ast_node_expression_binary_op(mLastMatchedTokenType, rval, simple_factor());
+	    rval = new blr_ast_node_expression_binary_op(tt, rval, simple_factor());
 	 } 
       }
 
@@ -1145,7 +1157,7 @@ public:
                    << " -> " << (**mLookAheadSymbol).mValue << std::endl;
 	 mLastMatchedTokenType = (**mLookAheadSymbol).mType;
          ++mLookAheadSymbol;
-         rval = true;         
+         rval = true;
       }
       return rval;
    }
@@ -1325,11 +1337,13 @@ public:
 	 output_expression(p->mCall);
       }
       else if (blr_ast_node_expression_binary_op *p = dynamic_cast<blr_ast_node_expression_binary_op *>(x)) {
-	 output_expression(p->mLeftExp);
-	 std::cout << " ";
+	 
 	 output_token(p->mOp);
-	 std::cout << " ";
+	 std::cout << "(";
+	 output_expression(p->mLeftExp);
+	 std::cout << " , ";
 	 output_expression(p->mRightExp);
+	 std::cout << ")";
       }
       else if (blr_ast_node_expression_unary_op *p = dynamic_cast<blr_ast_node_expression_unary_op *>(x)) {
 	 output_token(p->mOp);
@@ -1473,6 +1487,10 @@ public:
    std::list<blr_ast_node *> *get_struct_ast_list() {
       return &mASTStructs;
    }
+
+   std::list<blr_ast_node *> *get_global_variable_list() {
+      return &mGlobalVariables;
+   }
    
 private:
    bool mVerbose;
@@ -1492,7 +1510,7 @@ private:
    // Keep the last matched Value
    std::string mLastMatchedValue;
 
-   // Keep the last matched Type when the token is a type 
+   // Keep the last matched Type when the token is a type
    BLR_TOKEN_TYPE mLastMatchedTokenType;
 
    // Keep track of the nested structures  
@@ -1500,6 +1518,9 @@ private:
 
    // Current look-ahead symbol
    std::list<std::shared_ptr<blr_token>>::iterator mLookAheadSymbol;
+
+   // Mark the level of the nested declared functions (0 is global)
+   unsigned int mDeclarativeScopeLevel;
 
    // AST TREE
    blr_ast_node *mASTRoot;
@@ -1516,6 +1537,9 @@ private:
 
    // Type Names
    std::list<std::string> mDeclaredTypeList;
+
+   // Global Variables
+   std::list<blr_ast_node *> mGlobalVariables;
 
 
    // Only used in debug functions

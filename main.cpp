@@ -7,6 +7,8 @@
 #include "blur_parser.hpp"
 #include "blur_core.hpp"
 
+#include "blur_vm.hpp"
+
 // Simple command line parser
 // -------------------------------------------------------------------------------
 char* getCmdOption(char ** begin, char ** end, const std::string & option) {
@@ -90,18 +92,26 @@ int main(int argc, char *argv[]) {
  
       // Core Processing
       // --------------------------------------------------------------
+
       // Building core declared structures
       for (auto &x: *(parser.get_struct_ast_list())) {
 	 core.add_type(x);
       }
+
+      // Creating global variables
+      std::cout << "Adding GVs" << std::endl;
+      std::cout << std::endl;
+      for (auto &x: *(parser.get_global_variable_list())) {
+	 core.add_gv(x);
+      }      
+      std::cout << std::endl;
+      std::cout << std::endl;
 
       // TEST Core State
       // --------------------------------------------------------------
       std::cout << "CORE OUTPUT" << std::endl;
       std::cout << "----------------------------------------------" << std::endl;
       std::cout << "----------------------------------------------" << std::endl;
-
-      
 
       core.output_types();
       

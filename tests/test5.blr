@@ -1,0 +1,20 @@
+
+
+var int8   a_int8;
+var int16  a_int16;
+var int32  a_int32;
+
+var luc_1  a_luc_1;
+
+class luc_1 {
+   var int8[12]  a;
+   var int16[16] b;
+   var int8      c;
+}
+
+func void test() {
+   a = 3 * ( 1 + 4 );
+   b = 3 * 1 + 4;
+   c = 3 / (1 + 2) - 6 * 7;
+}
+

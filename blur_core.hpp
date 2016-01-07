@@ -167,6 +167,9 @@ public:
       else if (blr_ast_node_array *p = dynamic_cast<blr_ast_node_array *>(node)) {
 	 rval = get_base_type(p->mOf);
       }
+      else if (blr_ast_node_list *p = dynamic_cast<blr_ast_node_list *>(node)) {
+	 rval = get_base_type(p->mOf);
+      }
       return rval;
    }
 
@@ -185,7 +188,7 @@ public:
 	 // For each element of the class (it could be a var, a func or a class)
 	 for (auto &x: p->mDecDefs) {
 	    // We have a variable
-	    if (blr_ast_node_variable_definition *y = dynamic_cast<blr_ast_node_variable_definition *>(x)) {
+	    if (blr_ast_node_variable_declaration *y = dynamic_cast<blr_ast_node_variable_declaration *>(x)) {
 	       std::string var_name = y->mName;
 	       // It is of a base type
 	       if (blr_ast_node_base_type *z = dynamic_cast<blr_ast_node_base_type *>(y->mType)) {
@@ -223,7 +226,6 @@ public:
 			       << class_name << " does not exist. " << std::endl; 
 		     rval = false;
 		  }
-		  
 	       }
 	       // it is an list
 	       else if (blr_ast_node_list *z = dynamic_cast<blr_ast_node_list *>(y->mType)) {
@@ -255,6 +257,20 @@ public:
 
       return rval;
    } 
+
+   bool add_gv(blr_ast_node *node) {
+      if (blr_ast_node_variable_definition *y = dynamic_cast<blr_ast_node_variable_definition *>(node)) {
+	 std::cout << "Adding " << y->mName << " of base type ";
+	 // Does the type name exist?
+	 std::string base_type = get_base_type(y->mType);
+	 std::cout << base_type << std::endl;
+
+	 auto it = mTypeMap.find(base_type);
+	 if (it == mTypeMap.end()) {
+	    std::cout << "Error: type does not exist" << std::endl;
+	 }
+      }
+   }
 
 
    void output_types() {
