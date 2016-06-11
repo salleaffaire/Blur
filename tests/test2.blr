@@ -1,8 +1,12 @@
+class bit {
+   var int8 data;
+}
+
 var list{bit[32]}[32] name1;
 var bit[32]           name2;
-var bit[32]           name3 if ( 0 );
+var bit[32]           name3;
 
-struct foo {
+class foo {
    var byte a;
    var byte b;
    var void c;
@@ -36,9 +40,6 @@ func bit[32] foo(bit[32] n1, list{bit[32]} l1) {
          {
             foo_var = 0;
          }
-      }
-      if (true) {
-
       }
       break;
    } 

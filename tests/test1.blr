@@ -2,18 +2,23 @@
 // --------------------------------------------------------
 
 // bit[] type
+
+class bit {
+   var int8 data;
+}
+
 var bit[32] a_word;
 var bit[1]  just_one_bit;
 
-struct atom {
+class atom {
    var bit[32]      name;
    var bit[32]      size;
    var bit[32][..]  data;
 }
 
 // MP4 File
-struct mp4file {
-   var list{atom} file if (1);
+class mp4file {
+   var list{atom} file;
 }
 
 

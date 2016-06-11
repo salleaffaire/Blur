@@ -1,14 +1,19 @@
 // Test some comments
 using "IO"
 
-struct a {
+class bit {
+   var int8 data;
+}
+
+
+class a {
    var list{bit[32]} mList;
 
    func bit[32] foo(bit[32] x) {
       return x + 1;
    }
 
-   struct b {
+   class b {
       func bit[16] foo(bit[32] x) {
          return x - 1;
       }
